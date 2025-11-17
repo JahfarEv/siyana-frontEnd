@@ -15,10 +15,9 @@ import {
   Sparkles,
   Gem,
   Crown,
-  Minus,
-  Plus,
 } from "lucide-react";
 import { ReactElement } from "react";
+import AuthModal from "../auth/LoginModal"; // Adjust the import path as needed
 
 interface ProductDetailProps {
   product: {
@@ -55,7 +54,14 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
   const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const router = useRouter();
+
+  // Check if user is logged in (you can replace this with your actual auth check)
+  const isUserLoggedIn = () => {
+    // This is a placeholder - replace with your actual authentication check
+    return localStorage.getItem("siyana-user-token") !== null;
+  };
 
   const availabilityStatus = useMemo(() => {
     if (product.availability) {
@@ -126,6 +132,12 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
   const handleAddToCart = (): void => {
     if (!product.inStock) return;
 
+    // Check if user is logged in
+    if (!isUserLoggedIn()) {
+      setShowLoginModal(true);
+      return;
+    }
+
     setIsAddingToCart(true);
 
     // Get existing cart from localStorage
@@ -163,6 +175,14 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
   };
 
   const handleBuyNow = (): void => {
+    if (!product.inStock) return;
+
+    // Check if user is logged in
+    if (!isUserLoggedIn()) {
+      setShowLoginModal(true);
+      return;
+    }
+
     // Add to cart first
     handleAddToCart();
 
@@ -188,6 +208,31 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
       navigator.clipboard.writeText(window.location.href);
       alert("Product link copied to clipboard!");
     }
+  };
+
+  const handleLogin = (email: string, password: string) => {
+    // Add your login logic here
+    console.log("Login attempt:", email, password);
+
+    // For demo purposes, just store a token and close modal
+    localStorage.setItem("siyana-user-token", "demo-token");
+    setShowLoginModal(false);
+    alert("Login successful!");
+  };
+
+  const handleSignup = (
+    name: string,
+    email: string,
+    password: string,
+    confirmPassword: string
+  ) => {
+    // Add your signup logic here
+    console.log("Signup attempt:", name, email, password, confirmPassword);
+
+    // For demo purposes, just store a token and close modal
+    localStorage.setItem("siyana-user-token", "demo-token");
+    setShowLoginModal(false);
+    alert("Account created successfully!");
   };
 
   const getImageUrl = (image: any): string => {
@@ -312,40 +357,6 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
                 )}
               </div>
 
-              {/* Quantity Selector */}
-              <div className="space-y-3">
-                <h3 className="text-base font-semibold text-gray-900">
-                  Quantity
-                </h3>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center border border-gray-300 rounded-lg">
-                    <button
-                      onClick={() =>
-                        setQuantity((prev) => Math.max(1, prev - 1))
-                      }
-                      disabled={quantity <= 1}
-                      className="px-4 py-2 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="px-4 py-2 font-medium min-w-12 text-center bg-white border-x border-gray-300">
-                      {quantity}
-                    </span>
-                    <button
-                      onClick={() => setQuantity((prev) => prev + 1)}
-                      className="px-4 py-2 text-gray-600 hover:bg-gray-50 transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <span className="text-sm text-gray-600">
-                    {product.inStock
-                      ? `${product.stock || "Multiple"} units available`
-                      : "Out of Stock"}
-                  </span>
-                </div>
-              </div>
-
               {/* Action Buttons */}
               <div className="space-y-4">
                 <div className="flex gap-3">
@@ -372,31 +383,6 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
                     className="flex-1 flex items-center justify-center gap-3 bg-gray-900 text-white py-4 px-6 rounded-xl font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md"
                   >
                     {isAddingToCart ? "Processing..." : "Buy Now"}
-                  </button>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleWishlist}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium transition-all duration-300 border ${
-                      isWishlisted
-                        ? "bg-red-50 border-red-200 text-red-600"
-                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
-                    }`}
-                  >
-                    <Heart
-                      className={`w-5 h-5 ${
-                        isWishlisted ? "fill-current" : ""
-                      }`}
-                    />
-                    {isWishlisted ? "Wishlisted" : "Add to Wishlist"}
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"
-                  >
-                    <Share2 className="w-5 h-5" />
-                    Share
                   </button>
                 </div>
               </div>
@@ -475,6 +461,14 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLogin={handleLogin}
+        onSignup={handleSignup}
+      />
     </div>
   );
 };
