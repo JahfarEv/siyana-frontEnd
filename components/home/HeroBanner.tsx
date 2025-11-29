@@ -1,27 +1,29 @@
-'use client';
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+"use client";
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useCarousel } from "@/hooks/useCarousel";
 
 const HeroBanner: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
-
+  const { data, isLoading, isError } = useCarousel();
+  console.log(data,'res')
   const slides = [
     {
-      image: '/images/siyanaBg.jpg',
-      title: 'Exquisite Jewelry Collection',
-      subtitle: 'Discover our premium gold and diamond jewelry'
+      image: "/images/siyanaBg.jpg",
+      title: "Exquisite Jewelry Collection",
+      subtitle: "Discover our premium gold and diamond jewelry",
     },
     {
-      image: '/images/hero-2.jpg',
-      title: 'New Arrivals',
-      subtitle: 'Latest designs for every occasion'
+      image: "/images/hero-2.jpg",
+      title: "New Arrivals",
+      subtitle: "Latest designs for every occasion",
     },
     {
-      image: '/images/hero-3.jpg',
-      title: 'Special Offers',
-      subtitle: 'Up to 25% off on selected items'
-    }
+      image: "/images/hero-3.jpg",
+      title: "Special Offers",
+      subtitle: "Up to 25% off on selected items",
+    },
   ];
 
   useEffect(() => {
@@ -47,7 +49,7 @@ const HeroBanner: React.FC = () => {
         <div
           key={index}
           className={`absolute inset-0 transition-opacity duration-500 ${
-            index === currentSlide ? 'opacity-100' : 'opacity-0'
+            index === currentSlide ? "opacity-100" : "opacity-0"
           }`}
         >
           <Image
@@ -76,14 +78,14 @@ const HeroBanner: React.FC = () => {
       </div>
 
       {/* Navigation Arrows */}
-      <button 
+      <button
         onClick={prevSlide}
         className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-white/70 p-3 rounded-full text-gray-700 hover:bg-white z-30 transition-colors"
         aria-label="Previous slide"
       >
         <ChevronLeft size={24} />
       </button>
-      <button 
+      <button
         onClick={nextSlide}
         className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-white/70 p-3 rounded-full text-gray-700 hover:bg-white z-30 transition-colors"
         aria-label="Next slide"
@@ -98,7 +100,7 @@ const HeroBanner: React.FC = () => {
             key={index}
             onClick={() => setCurrentSlide(index)}
             className={`w-3 h-3 rounded-full transition-colors ${
-              index === currentSlide ? 'bg-white' : 'bg-white/50'
+              index === currentSlide ? "bg-white" : "bg-white/50"
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
