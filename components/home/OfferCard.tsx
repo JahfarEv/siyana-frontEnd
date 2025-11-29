@@ -4,9 +4,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { OfferCardProps } from '@/types';
 import { ReactElement } from 'react';
-import { OFFERS } from '@/lib/constants/Data';
+// -
+import { useOffers } from '@/hooks/useCarousel';
 
-const OfferCard: React.FC<OfferCardProps> = ({ title, subtitle, className, image }): ReactElement => {
+const OfferCard: React.FC<OfferCardProps> = ({ productName, discountPercentage, className, image }): ReactElement => {
   const router = useRouter();
 
   const handleClick = () => {
@@ -17,7 +18,7 @@ const OfferCard: React.FC<OfferCardProps> = ({ title, subtitle, className, image
       'Glowing Gold Necklace': 'pendant'
     };
 
-    const categorySlug = offerToCategoryMap[subtitle];
+    const categorySlug = offerToCategoryMap[discountPercentage];
     if (categorySlug) {
       router.push(`/category/${categorySlug}`);
     } else {
@@ -33,15 +34,15 @@ const OfferCard: React.FC<OfferCardProps> = ({ title, subtitle, className, image
     >
       <Image
         src={image}
-        alt={subtitle}
+        alt={discountPercentage}
         fill
         className="object-cover group-hover:scale-105 transition-transform duration-300"
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
       />
       {/* Dark Overlay for text readability */}
       <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition duration-300 flex flex-col justify-end p-6">
-        <p className="text-lg font-semibold text-white mb-2">{title}</p>
-        <h3 className="text-3xl font-bold text-yellow-300">{subtitle}</h3>
+        <p className="text-lg font-semibold text-white mb-2">{discountPercentage} Flat Offer</p>
+        <h3 className="text-3xl font-bold text-yellow-300">{productName}</h3>
         <button 
           onClick={(e) => {
             e.stopPropagation(); // Prevent card click when button is clicked
@@ -57,11 +58,13 @@ const OfferCard: React.FC<OfferCardProps> = ({ title, subtitle, className, image
 };
 
 const OfferCards: React.FC = (): ReactElement => {
+  const { data: OFFERS, isLoading, isError } = useOffers();
+
   return (
     <section className="py-8">
       <h2 className="text-3xl font-serif text-center mb-8 text-gray-800">Special Offers</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-4 sm:px-6 lg:px-8 ">
-        {OFFERS.map((offer, index) => (
+        {OFFERS?.map((offer, index) => (
           <OfferCard key={index} {...offer} />
         ))}
       </div>

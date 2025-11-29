@@ -110,7 +110,7 @@ const CategoryProducts: React.FC<CategoryProductsProps> = ({
         )}
 
         {/* Load More (Pagination) */}
-        {sortedProducts.length > 0 && (
+        {sortedProducts.length > 8 && (
           <div className="mt-8 text-center">
             <button className="px-8 py-3 border border-[#196b7a] text-[#196b7a] bg-gray-100 cursor-pointer font-semibold rounded-lg hover:bg-white transition-colors">
               Load More Products...

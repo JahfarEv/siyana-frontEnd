@@ -6,6 +6,7 @@ import NavbarWrapper from "@/components/layout/NavbarWrapper";
 import Footer from "@/components/layout/Footer";
 import { ALL_PRODUCTS } from "@/lib/constants/Data";
 import { ReactElement } from "react";
+import { fetchProductById } from "@/lib/firebase/firebaseQueries";
 
 interface ProductDetailPageProps {
   params: Promise<{
@@ -24,7 +25,7 @@ export async function generateMetadata({
 }: ProductDetailPageProps): Promise<Metadata> {
   const { productId } = await params;
 
-  const product = ALL_PRODUCTS.find((p) => p.id.toString() === productId);
+  const product = await fetchProductById(productId);
 
   if (!product) {
     return {
@@ -50,8 +51,9 @@ export default async function ProductDetailPage({
 }: ProductDetailPageProps): Promise<ReactElement> {
   const { productId } = await params;
 
-  const product = ALL_PRODUCTS.find((p) => p.id.toString() === productId);
+  const product = await fetchProductById(productId);
 
+  console.log(product,'pro')
   if (!product) {
     notFound();
   }

@@ -3,30 +3,33 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCarousel } from "@/hooks/useCarousel";
+import Link from "next/link";
+
+// Type for carousel items
+interface CarouselItem {
+  id: string;
+  url?: string;
+  title?: string;
+  description?: string;
+  route?: string;
+  createdAt?: { seconds: number; nanoseconds: number };
+}
 
 const HeroBanner: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
-  const { data, isLoading, isError } = useCarousel();
-  console.log(data,'res')
-  const slides = [
-    {
-      image: "/images/siyanaBg.jpg",
-      title: "Exquisite Jewelry Collection",
-      subtitle: "Discover our premium gold and diamond jewelry",
-    },
-    {
-      image: "/images/hero-2.jpg",
-      title: "New Arrivals",
-      subtitle: "Latest designs for every occasion",
-    },
-    {
-      image: "/images/hero-3.jpg",
-      title: "Special Offers",
-      subtitle: "Up to 25% off on selected items",
-    },
-  ];
+
+  // Correctly type the data returned from the hook
+  const { data, isLoading, isError } = useCarousel() as {
+    data?: CarouselItem[];
+    isLoading: boolean;
+    isError: boolean;
+  };
+
+  // Use a fallback if no data
+  const slides: CarouselItem[] = data?.length ? data : [];
 
   useEffect(() => {
+    if (!slides.length) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
@@ -34,47 +37,50 @@ const HeroBanner: React.FC = () => {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  const nextSlide = (): void => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
-
-  const prevSlide = (): void => {
+  const nextSlide = (): void => setCurrentSlide((prev) => (prev + 1) % slides.length);
+  const prevSlide = (): void =>
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  };
+
+  if (isLoading) return <div className="h-96 bg-gray-200 animate-pulse rounded-3xl m-4" />;
+  if (isError) return <div className="h-96 bg-red-200 rounded-3xl m-4">Failed to load slides</div>;
+  if (!slides.length) return null;
 
   return (
     <div className="relative h-96 flex items-center justify-center overflow-hidden rounded-3xl m-4">
       {/* Slides */}
       {slides.map((slide, index) => (
         <div
-          key={index}
+          key={slide.id}
           className={`absolute inset-0 transition-opacity duration-500 ${
             index === currentSlide ? "opacity-100" : "opacity-0"
           }`}
         >
-          <Image
-            src={slide.image}
-            alt={slide.title}
-            fill
-            className="object-cover"
-            priority={index === 0}
-            sizes="100vw"
-          />
+          {slide.url && (
+            <Image
+              src={slide.url}
+              alt={slide.title || "Slide"}
+              fill
+              className="object-cover"
+              priority={index === 0}
+              sizes="100vw"
+            />
+          )}
           <div className="absolute inset-0 bg-black/30" />
         </div>
       ))}
 
       {/* Content */}
       <div className="relative z-10 text-center text-white px-6 max-w-2xl">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          {slides[currentSlide].title}
-        </h1>
-        <p className="text-lg md:text-xl mb-6 opacity-90">
-          {slides[currentSlide].subtitle}
-        </p>
-        <button className="mt-6 px-8 py-3 bg-yellow-400 text-gray-900 font-semibold uppercase tracking-wider rounded-lg hover:bg-yellow-300 transition shadow-lg">
-          Shop Now
-        </button>
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">{slides[currentSlide]?.title}</h1>
+        <p className="text-lg md:text-xl mb-6 opacity-90">{slides[currentSlide]?.description}</p>
+        {slides[currentSlide]?.route && (
+          <Link
+            href={slides[currentSlide].route}
+            className="mt-6 inline-block px-8 py-3 bg-yellow-400 text-gray-900 font-semibold uppercase tracking-wider rounded-lg hover:bg-yellow-300 transition shadow-lg text-center"
+          >
+            Shop Now
+          </Link>
+        )}
       </div>
 
       {/* Navigation Arrows */}
