@@ -429,3 +429,13 @@ export interface ContactForm {
   subject: string;
   message: string;
 }
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  image: string;         // if stored as image URL
+  productCount: number;
+  createdAt?: any;
+  updatedAt?: any;
+}
+

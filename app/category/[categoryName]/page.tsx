@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { CATEGORIES, ALL_PRODUCTS } from "@/lib/constants/Data";
 import { Product, ProductCategory } from "@/types";
 import { ReactElement } from "react";
+import { fetchCategories, fetchProductsByCategory } from "@/lib/firebase/firebaseQueries";
 
 interface CategoryPageProps {
   params: Promise<{
@@ -17,58 +18,55 @@ interface CategoryPageProps {
   };
 }
 
-export async function generateStaticParams() {
-  return CATEGORIES.map((category) => ({
-    categoryName: category.slug,
-  }));
-}
+// export async function generateStaticParams() {
+//   return CATEGORIES.map((category) => ({
+//     categoryName: category.slug,
+//   }));
+// }
 
-export async function generateMetadata({
-  params,
-}: CategoryPageProps): Promise<Metadata> {
-  const { categoryName } = await params;
+// export async function generateMetadata({
+//   params,
+// }: CategoryPageProps): Promise<Metadata> {
+//   const { categoryName } = await params;
 
-  const category = CATEGORIES.find((cat) => cat.slug === categoryName);
+//   const category = CATEGORIES.find((cat) => cat.slug === categoryName);
 
-  if (!category) {
-    return {
-      title: "Category Not Found - Siyana Gold & Diamonds",
-    };
-  }
+//   if (!category) {
+//     return {
+//       title: "Category Not Found - Siyana Gold & Diamonds",
+//     };
+//   }
 
-  return {
-    title: `${category.name} Collection - Siyana Gold & Diamonds`,
-    description: category.description,
-    keywords: [
-      `${category.name}`,
-      "gold jewelry",
-      "diamonds",
-      "premium jewelry",
-    ],
-    openGraph: {
-      title: `${category.name} Collection - Siyana Gold & Diamonds`,
-      description: category.description,
-      type: "website",
-    },
-  };
-}
+//   return {
+//     title: `${category.name} Collection - Siyana Gold & Diamonds`,
+//     description: category.description,
+//     keywords: [
+//       `${category.name}`,
+//       "gold jewelry",
+//       "diamonds",
+//       "premium jewelry",
+//     ],
+//     openGraph: {
+//       title: `${category.name} Collection - Siyana Gold & Diamonds`,
+//       description: category.description,
+//       type: "website",
+//     },
+//   };
+// }
 
 export default async function CategoryPage({
   params,
   searchParams,
 }: CategoryPageProps): Promise<ReactElement> {
   const { categoryName } = await params;
+  
+  const categories = await fetchCategories();
+  
+  // 2️⃣ Find the selected category by slug
+  const category = categories.find((cat) => cat.name === categoryName);
 
-  const category = CATEGORIES.find((cat) => cat.slug === categoryName);
-
-  if (!category) {
-    notFound();
-  }
-
-  // Filter ALL_PRODUCTS to get all products for the category
-  const products = ALL_PRODUCTS.filter(
-    (product) => product.category.slug === categoryName
-  );
+  if (!category) notFound();
+   const products = await fetchProductsByCategory(category.id);
 
   const sort = searchParams?.sort || "name";
   const page = parseInt(searchParams?.page || "1");

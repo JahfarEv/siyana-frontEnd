@@ -23,14 +23,14 @@ interface ProductDetailProps {
   product: {
     id: string | number;
     name: string;
-    price: number;
+    price: string;
     originalPrice?: number;
     discount: number;
     description: string;
     rating: number;
     reviewCount: number;
     inStock: boolean;
-    stock?: number | null;
+    stock?: number | string;
     isOnSale?: boolean;
     isNew?: boolean;
     images: (string | { url: string })[];
@@ -38,6 +38,7 @@ interface ProductDetailProps {
     specifications?: { [key: string]: string };
     tags?: string[];
     sku?: string;
+    status:string;
     availability?: "In Stock" | "Low Stock" | "Out of Stock";
     category: {
       name: string;
@@ -327,13 +328,13 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
                 {/* Rating and Reviews */}
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
-                    <div className="flex">{renderStars(product.rating)}</div>
+                    <div className="flex">{renderStars(product?.rating)}</div>
                     <span className="text-sm font-semibold text-gray-700">
-                      {product.rating.toFixed(1)}
+                      {product?.rating}
                     </span>
                   </div>
                   <span className="text-sm text-gray-600">
-                    ({product.reviewCount.toLocaleString()} reviews)
+                    ({product?.reviewCount?.toLocaleString()} reviews)
                   </span>
                 </div>
               </div>
@@ -362,7 +363,7 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
                 <div className="flex gap-3">
                   <button
                     onClick={handleAddToCart}
-                    disabled={!product.inStock || isAddingToCart}
+                    disabled={!product.status || isAddingToCart}
                     className="flex-1 flex items-center justify-center gap-3 bg-[#196b7a] text-white py-4 px-6 rounded-xl font-semibold hover:bg-[#196b7a]/90 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md"
                   >
                     {isAddingToCart ? (
@@ -379,7 +380,7 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
                   </button>
                   <button
                     onClick={handleBuyNow}
-                    disabled={!product.inStock || isAddingToCart}
+                    disabled={!product.status || isAddingToCart}
                     className="flex-1 flex items-center justify-center gap-3 bg-gray-900 text-white py-4 px-6 rounded-xl font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md"
                   >
                     {isAddingToCart ? "Processing..." : "Buy Now"}
