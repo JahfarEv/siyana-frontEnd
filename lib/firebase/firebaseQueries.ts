@@ -171,7 +171,7 @@ export const fetchGoldRate = async () => {
   try {
     const q = query(
       collection(db, "goldRates"),
-      orderBy("createdAt", "desc"), // optional, get latest first
+      orderBy("createdAt", "desc"), 
       limit(1)
     );
 
