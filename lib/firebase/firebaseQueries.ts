@@ -203,9 +203,10 @@ export const fetchGoldRate = async () => {
 export const signupUser = async (
   name: string,
   email: string,
+  mobile:string,
   password: string
 ): Promise<User> => {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const userCredential = await createUserWithEmailAndPassword(auth, email, mobile,password);
   const user = userCredential.user;
 
   // Store name in user profile
