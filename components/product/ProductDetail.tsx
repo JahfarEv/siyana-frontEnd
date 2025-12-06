@@ -131,7 +131,8 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
   };
 
   const handleAddToCart = (): void => {
-    if (!product.inStock) return;
+    console.log(product)
+    if (Number(product.stock)<1) return;
 
     // Check if user is logged in
     if (!isUserLoggedIn()) {
@@ -176,7 +177,7 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
   };
 
   const handleBuyNow = (): void => {
-    if (!product.inStock) return;
+    if (Number(product.stock)<1) return;
 
     // Check if user is logged in
     if (!isUserLoggedIn()) {

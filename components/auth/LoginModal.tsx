@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { AuthModalProps } from "@/types";
+import { loginUser, signupUser } from "@/lib/firebase/firebaseQueries";
+import toast from "react-hot-toast";
 
 const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
@@ -12,30 +14,51 @@ const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
   const [signupForm, setSignupForm] = useState({
     name: "",
     email: "",
+    mobile: "",
     password: "",
     confirmPassword: "",
   });
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(loginForm.email, loginForm.password);
-    // Reset form
-    setLoginForm({ email: "", password: "" });
+    setLoading(true);
+    try {
+      await loginUser(loginForm.email, loginForm.password);
+      toast.success("Logged in successfully");
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message);
+    }finally {
+    setLoading(false);
+  }
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSignup(
-      signupForm.name,
-      signupForm.email,
-      signupForm.password,
-      signupForm.confirmPassword
-    );
-    // Reset form
-    setSignupForm({ name: "", email: "", password: "", confirmPassword: "" });
+    setLoading(true);
+
+    if (signupForm.password !== signupForm.confirmPassword) {
+      return toast.error("Passwords do not match");
+    }
+
+    try {
+      await signupUser(
+        signupForm.name,
+        signupForm.email,
+        signupForm.mobile,
+        signupForm.password,
+      );
+      toast.success("Account created successfully!");
+      setIsLogin(true);
+    } catch (err: any) {
+      toast.error(err.message);
+    }finally {
+    setLoading(false);
+  }
   };
 
   const switchToSignup = () => {
@@ -45,7 +68,13 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
   const switchToLogin = () => {
     setIsLogin(true);
-    setSignupForm({ name: "", email: "", password: "", confirmPassword: "" });
+    setSignupForm({
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      mobile: "",
+    });
   };
 
   if (!isOpen) return null;
@@ -107,7 +136,6 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password
@@ -180,7 +208,21 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 required
               />
             </div>
-
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mobile Number
+              </label>
+              <input
+                type="tel"
+                value={signupForm.mobile}
+                onChange={(e) =>
+                  setSignupForm({ ...signupForm, mobile: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#196b7a] focus:border-transparent transition-all"
+                placeholder="Enter your mobile number"
+                required
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password
@@ -218,9 +260,25 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
             <button
               type="submit"
-              className="w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#196b7a]/90 transition-colors shadow-md"
+              disabled={loading}
+              className={`w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold shadow-md transition-all
+    ${
+      loading
+        ? "opacity-70 cursor-not-allowed scale-95"
+        : "hover:bg-[#196b7a]/90 active:scale-95"
+    }
+  `}
             >
-              Create Account
+              {loading ? (
+                <span className="flex justify-center items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Processing...
+                </span>
+              ) : isLogin ? (
+                "Login"
+              ) : (
+                "Create Account"
+              )}
             </button>
 
             <p className="text-center text-sm text-gray-600 mt-4">
