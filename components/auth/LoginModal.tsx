@@ -1,243 +1,142 @@
-"use client";
+'use client';
+import React, { useState, FormEvent } from 'react';
+import { X } from 'lucide-react';
+import { LoginModalProps, LoginFormData } from '@/types';
 
-import { useState } from "react";
-import { X } from "lucide-react";
-import { AuthModalProps } from "@/types";
-
-const AuthModal: React.FC<AuthModalProps> = ({
-  isOpen,
-  onClose,
-  onLogin,
-  onSignup,
-}) => {
+const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
   const [isLogin, setIsLogin] = useState<boolean>(true);
-  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [signupForm, setSignupForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+  const [formData, setFormData] = useState<LoginFormData>({
+    name: '',
+    email: '',
+    password: ''
   });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    onLogin(loginForm.email, loginForm.password);
-    // Reset form
-    setLoginForm({ email: "", password: "" });
+    setIsLoading(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      if (isLogin) {
+        // Login logic
+        onLogin({ 
+          id: 1,
+          email: formData.email,
+          firstName: 'User',
+          lastName: 'Customer',
+          isVerified: true,
+          isActive: true,
+          role: 'customer'
+        });
+      } else {
+        // Signup logic
+        onLogin({ 
+          id: 1,
+          email: formData.email,
+          firstName: formData.name.split(' ')[0] || 'User',
+          lastName: formData.name.split(' ')[1] || 'Customer',
+          isVerified: true,
+          isActive: true,
+          role: 'customer'
+        });
+      }
+      setIsLoading(false);
+    }, 1000);
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSignup(
-      signupForm.name,
-      signupForm.email,
-      signupForm.password,
-      signupForm.confirmPassword
-    );
-    // Reset form
-    setSignupForm({ name: "", email: "", password: "", confirmPassword: "" });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
-
-  const switchToSignup = () => {
-    setIsLogin(false);
-    setLoginForm({ email: "", password: "" });
-  };
-
-  const switchToLogin = () => {
-    setIsLogin(true);
-    setSignupForm({ name: "", email: "", password: "", confirmPassword: "" });
-  };
-
-  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 relative">
-        {/* Close Button */}
-        <button
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 relative">
+        <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 transition-colors"
+          aria-label="Close modal"
         >
-          <X className="w-6 h-6" />
+          <X size={24} />
         </button>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 mb-6">
-          <button
-            onClick={() => setIsLogin(true)}
-            className={`flex-1 py-3 font-semibold text-center transition-colors ${
-              isLogin
-                ? "text-[#196b7a] border-b-2 border-[#196b7a]"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Login
-          </button>
-          <button
-            onClick={() => setIsLogin(false)}
-            className={`flex-1 py-3 font-semibold text-center transition-colors ${
-              !isLogin
-                ? "text-[#196b7a] border-b-2 border-[#196b7a]"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Sign Up
-          </button>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">
+            {isLogin ? 'Login' : 'Sign Up'}
+          </h2>
         </div>
 
-        {/* Login Form */}
-        {isLogin ? (
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Welcome Back
-            </h2>
-
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={loginForm.email}
-                onChange={(e) =>
-                  setLoginForm({ ...loginForm, email: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#196b7a] focus:border-transparent transition-all"
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                value={loginForm.password}
-                onChange={(e) =>
-                  setLoginForm({ ...loginForm, password: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#196b7a] focus:border-transparent transition-all"
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#196b7a]/90 transition-colors shadow-md"
-            >
-              Login
-            </button>
-
-            <p className="text-center text-sm text-gray-600 mt-4">
-              Don't have an account?{" "}
-              <button
-                type="button"
-                onClick={switchToSignup}
-                className="text-[#196b7a] font-semibold hover:underline"
-              >
-                Sign up here
-              </button>
-            </p>
-          </form>
-        ) : (
-          /* Signup Form */
-          <form onSubmit={handleSignupSubmit} className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Create Account
-            </h2>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Full Name
               </label>
               <input
                 type="text"
-                value={signupForm.name}
-                onChange={(e) =>
-                  setSignupForm({ ...signupForm, name: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#196b7a] focus:border-transparent transition-all"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                required={!isLogin}
                 placeholder="Enter your full name"
-                required
               />
             </div>
+          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              required
+              placeholder="Enter your email"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={signupForm.email}
-                onChange={(e) =>
-                  setSignupForm({ ...signupForm, email: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#196b7a] focus:border-transparent transition-all"
-                placeholder="Enter your email"
-                required
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              required
+              placeholder="Enter your password"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                value={signupForm.password}
-                onChange={(e) =>
-                  setSignupForm({ ...signupForm, password: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#196b7a] focus:border-transparent transition-all"
-                placeholder="Create a password"
-                required
-              />
-            </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-amber-500 text-white py-3 rounded-lg font-medium hover:bg-amber-600 disabled:bg-amber-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoading ? 'Please wait...' : (isLogin ? 'Login' : 'Create Account')}
+          </button>
+        </form>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                value={signupForm.confirmPassword}
-                onChange={(e) =>
-                  setSignupForm({
-                    ...signupForm,
-                    confirmPassword: e.target.value,
-                  })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#196b7a] focus:border-transparent transition-all"
-                placeholder="Confirm your password"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#196b7a]/90 transition-colors shadow-md"
-            >
-              Create Account
-            </button>
-
-            <p className="text-center text-sm text-gray-600 mt-4">
-              Already have an account?{" "}
-              <button
-                type="button"
-                onClick={switchToLogin}
-                className="text-[#196b7a] font-semibold hover:underline"
-              >
-                Login here
-              </button>
-            </p>
-          </form>
-        )}
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            className="text-amber-600 hover:text-amber-700 font-medium transition-colors"
+          >
+            {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Login'}
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default AuthModal;
+export default LoginModal;
