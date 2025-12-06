@@ -27,14 +27,18 @@ const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     setLoading(true);
     try {
-      await loginUser(loginForm.email, loginForm.password);
+      const { token, user }= await loginUser(loginForm.email, loginForm.password);
+
+      // Save token to localStorage
+      localStorage.setItem("siyana-user-token", token);
       toast.success("Logged in successfully");
+
       onClose();
     } catch (err: any) {
       toast.error(err.message);
-    }finally {
-    setLoading(false);
-  }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
@@ -50,15 +54,15 @@ const AuthModal: React.FC<AuthModalProps> = ({
         signupForm.name,
         signupForm.email,
         signupForm.mobile,
-        signupForm.password,
+        signupForm.password
       );
       toast.success("Account created successfully!");
       setIsLogin(true);
     } catch (err: any) {
       toast.error(err.message);
-    }finally {
-    setLoading(false);
-  }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const switchToSignup = () => {
@@ -151,13 +155,19 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 required
               />
             </div>
-
-            <button
-              type="submit"
-              className="w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#196b7a]/90 transition-colors shadow-md"
-            >
-              Login
-            </button>
+            {loading ? (
+              <span className="flex justify-center items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Processing...
+              </span>
+            ) : (
+              <button
+                type="submit"
+                className="w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#196b7a]/90 transition-colors shadow-md"
+              >
+                Login
+              </button>
+            )}
 
             <p className="text-center text-sm text-gray-600 mt-4">
               Don't have an account?{" "}

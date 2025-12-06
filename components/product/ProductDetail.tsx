@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { ReactElement } from "react";
 import AuthModal from "../auth/LoginModal"; // Adjust the import path as needed
+import { addToCart, getUserCart } from "@/lib/firebase/firebaseQueries";
+import toast from "react-hot-toast";
+import { auth } from "@/lib/firebase/firebaseConfig";
 
 interface ProductDetailProps {
   product: {
@@ -38,7 +41,7 @@ interface ProductDetailProps {
     specifications?: { [key: string]: string };
     tags?: string[];
     sku?: string;
-    status:string;
+    status: string;
     availability?: "In Stock" | "Low Stock" | "Out of Stock";
     category: {
       name: string;
@@ -56,6 +59,7 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [isInCart, setIsInCart] = useState<boolean>(false);
   const router = useRouter();
 
   // Check if user is logged in (you can replace this with your actual auth check)
@@ -130,11 +134,9 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
     return stars;
   };
 
-  const handleAddToCart = (): void => {
-    console.log(product)
-    if (Number(product.stock)<1) return;
+  const handleAddToCart = async (): Promise<void> => {
+    if (Number(product.stock) < 1) return;
 
-    // Check if user is logged in
     if (!isUserLoggedIn()) {
       setShowLoginModal(true);
       return;
@@ -142,42 +144,27 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
 
     setIsAddingToCart(true);
 
-    // Get existing cart from localStorage
-    const existingCart = localStorage.getItem("siyana-cart");
-    const cart = existingCart ? JSON.parse(existingCart) : [];
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
 
-    // Check if product already exists in cart
-    const existingItemIndex = cart.findIndex(
-      (item: any) => item.id === product.id
-    );
+      await addToCart(user.uid, product, quantity);
 
-    if (existingItemIndex > -1) {
-      // Update quantity if item exists
-      cart[existingItemIndex].quantity += quantity;
-    } else {
-      // Add new item to cart
-      const cartItem = {
-        ...product,
-        quantity: quantity,
-        images: product.images, // Ensure images are included
-      };
-      cart.push(cartItem);
+      setIsInCart(true); // <-- update instantly
+
+      const count = Number(localStorage.getItem("siyana-cart-count") || 0);
+      localStorage.setItem("siyana-cart-count", String(count + quantity));
+
+      toast.success(`${product.name} added to cart!`);
+    } catch (err) {
+      toast.error("Failed to add to cart");
+    } finally {
+      setIsAddingToCart(false);
     }
-
-    // Save to localStorage
-    localStorage.setItem("siyana-cart", JSON.stringify(cart));
-
-    // Reset loading state
-    setIsAddingToCart(false);
-
-    // Show success message (you can replace this with a toast notification)
-    alert(`${product.name} added to cart!`);
-
-    console.log("Added to cart:", product, quantity);
   };
 
   const handleBuyNow = (): void => {
-    if (Number(product.stock)<1) return;
+    if (Number(product.stock) < 1) return;
 
     // Check if user is logged in
     if (!isUserLoggedIn()) {
@@ -243,6 +230,18 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
     return "/placeholder-image.jpg";
   };
 
+  useEffect(() => {
+    const checkCart = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const cartItems = await getUserCart(user.uid);
+      const exists = cartItems.some((item: any) => item.id === product.id);
+      setIsInCart(exists);
+    };
+
+    checkCart();
+  }, [product.id]);
   const currentPrice = `₹${product.price.toLocaleString()}`;
   const originalPrice = product.originalPrice
     ? `₹${product.originalPrice.toLocaleString()}`
@@ -362,23 +361,34 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
               {/* Action Buttons */}
               <div className="space-y-4">
                 <div className="flex gap-3">
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={!product.status || isAddingToCart}
-                    className="flex-1 flex items-center justify-center gap-3 bg-[#196b7a] text-white py-4 px-6 rounded-xl font-semibold hover:bg-[#196b7a]/90 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md"
-                  >
-                    {isAddingToCart ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Adding...
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag className="w-5 h-5" />
-                        Add to Cart
-                      </>
-                    )}
-                  </button>
+                  {isInCart ? (
+                    <button
+                      onClick={() => router.push("/cart")}
+                      className="flex-1 flex items-center justify-center gap-3 bg-green-600 text-white py-4 px-6 rounded-xl font-semibold hover:bg-green-700 transition-all duration-300 shadow-md"
+                    >
+                      <ShoppingBag className="w-5 h-5" />
+                      Go to Cart
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={isAddingToCart}
+                      className="flex-1 flex items-center justify-center gap-3 bg-[#196b7a] text-white py-4 px-6 rounded-xl font-semibold hover:bg-[#196b7a]/90 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md"
+                    >
+                      {isAddingToCart ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag className="w-5 h-5" />
+                          Add to Cart
+                        </>
+                      )}
+                    </button>
+                  )}
+
                   <button
                     onClick={handleBuyNow}
                     disabled={!product.status || isAddingToCart}
