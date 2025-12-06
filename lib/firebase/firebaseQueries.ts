@@ -200,38 +200,75 @@ export const fetchGoldRate = async () => {
 
 
 
-export const signupUser = async (
-  name: string,
-  email: string,
-  mobile: string,
-  password: string
-): Promise<User> => {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, mobile, password);
-  const user = userCredential.user;
+export const signupUser = async (name: string, email: string, mobile: string, password: string) => {
+  try {
+    // 1. Create user in Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password, mobile);
+    const user = userCredential.user;
 
-  // Store name in user profile
-  await updateProfile(user, { displayName: name });
+    // 2. Update display name
+    await updateProfile(user, { displayName: name });
 
-  return user;
+    // 3. Create user document in Firestore with role 'customer'
+    await setDoc(doc(db, "users", user.uid), {
+      name,
+      email,
+      mobile,
+      role: "customer",
+      createdAt: new Date(),
+    });
+
+    return user; // return firebase auth user
+  } catch (error) {
+    console.error("Signup Error:", error);
+    throw error;
+  }
 };
 
 // Login
-export const loginUser = async (
-  email: string,
-  password: string
-): Promise<User> => {
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
+export const loginUser = async (identifier: string, password: string) => {
+  try {
+    let emailToUse = identifier;
+
+    // If identifier is a mobile number, fetch corresponding email from Firestore
+    if (/^\d+$/.test(identifier)) {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("mobile", "==", identifier), where("role", "==", "customer"));
+      const snap = await getDocs(q);
+
+      if (snap.empty) throw new Error("User not found");
+
+      const userDoc = snap.docs[0];
+      emailToUse = userDoc.data().email;
+    }
+
+    // Sign in with email & password
+    const userCredential = await signInWithEmailAndPassword(auth, emailToUse, password);
+    const user = userCredential.user;
+
+    // Fetch Firestore user document
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) throw new Error("User data not found");
+
+    const userData = userDoc.data();
+
+    if (userData.role !== "customer") throw new Error("Access denied. Not a customer.");
+
+    const token = await user.getIdToken();
+
+    return { token, user: { uid: user.uid, ...userData } };
+  } catch (error: any) {
+    console.error("Login Error:", error);
+    throw new Error(error.message || "Login failed");
+  }
 };
-
-export const addToCart = async (uid: string, product: any, quantity: number) => {
+export const addToCart = async (uid: string, product: any, quantity = 1) => {
   const cartRef = doc(db, "users", uid, "cart", product.id);
+  const cartSnap = await getDoc(cartRef);
 
-  const cartItemSnap = await getDoc(cartRef);
-
-  if (cartItemSnap.exists()) {
-    // Update quantity
-    const currentQty = cartItemSnap.data().quantity;
+  if (cartSnap.exists()) {
+    // Update quantity if product exists
+    const currentQty = cartSnap.data().quantity || 0;
     await updateDoc(cartRef, { quantity: currentQty + quantity });
   } else {
     // Add new product
@@ -246,7 +283,7 @@ export const addToCart = async (uid: string, product: any, quantity: number) => 
 
 
 export const getUserCart = async (id) => {
-  console.log('hello ',id)
+  console.log('hello ', id)
   if (!id) return [];
 
   const cartCollectionRef = collection(db, "users", id, "cart");

@@ -30,7 +30,7 @@ import {
 } from "@/lib/firebase/firebaseQueries";
 import { onAuthStateChanged } from "firebase/auth";
 
-export default function CartPage(): ReactElement {
+export default function CartPage(): ReactElement {  
   const [cart, setCart] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);

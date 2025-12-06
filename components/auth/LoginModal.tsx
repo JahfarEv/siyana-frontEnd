@@ -27,8 +27,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     setLoading(true);
     try {
-      const user = await loginUser(loginForm.email, loginForm.password);
-      const token = await user.getIdToken();
+      const { token, user }= await loginUser(loginForm.email, loginForm.password);
 
       // Save token to localStorage
       localStorage.setItem("siyana-user-token", token);
