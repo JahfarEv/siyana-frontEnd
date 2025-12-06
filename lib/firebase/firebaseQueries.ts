@@ -1,9 +1,15 @@
 // firebaseQueries.js
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase/firebaseConfig";
+import { auth, db } from "@/lib/firebase/firebaseConfig";
 import { Category } from "@/types";
 import { Product } from "@/types";
 import moment from "moment";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+  User
+} from "firebase/auth";
 
 export const fetchProducts = async () => {
   const querySnapshot = await getDocs(collection(db, "products"));
@@ -190,4 +196,29 @@ export const fetchGoldRate = async () => {
     console.error("❌ Firebase Fetch Error (gold rate):", error);
     throw error;
   }
+};
+
+
+
+export const signupUser = async (
+  name: string,
+  email: string,
+  password: string
+): Promise<User> => {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const user = userCredential.user;
+
+  // Store name in user profile
+  await updateProfile(user, { displayName: name });
+
+  return user;
+};
+
+// Login
+export const loginUser = async (
+  email: string,
+  password: string
+): Promise<User> => {
+  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  return userCredential.user;
 };

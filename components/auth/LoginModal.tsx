@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { AuthModalProps } from "@/types";
+import { loginUser, signupUser } from "@/lib/firebase/firebaseQueries";
+import toast from "react-hot-toast";
 
 const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
@@ -19,24 +21,36 @@ const AuthModal: React.FC<AuthModalProps> = ({
     confirmPassword: "",
   });
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onLogin(loginForm.email, loginForm.password);
-    // Reset form
-    setLoginForm({ email: "", password: "" });
-  };
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    await loginUser(loginForm.email, loginForm.password);
+    toast.success("Logged in successfully");
+    onClose();
+  } catch (err: any) {
+    toast.error(err.message);
+  }
+};
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSignup(
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (signupForm.password !== signupForm.confirmPassword) {
+    return toast.error("Passwords do not match");
+  }
+
+  try {
+    await signupUser(
       signupForm.name,
       signupForm.email,
-      signupForm.password,
-      signupForm.confirmPassword
+      signupForm.password
     );
-    // Reset form
-    setSignupForm({ name: "", email: "", password: "", confirmPassword: "" });
-  };
+    toast.success("Account created successfully!");
+    setIsLogin(true);
+  } catch (err: any) {
+    toast.error(err.message);
+  }
+};
 
   const switchToSignup = () => {
     setIsLogin(false);
