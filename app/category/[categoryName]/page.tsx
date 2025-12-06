@@ -66,7 +66,7 @@ export default async function CategoryPage({
   const category = categories.find((cat) => cat.name === categoryName);
 
   if (!category) notFound();
-   const products = await fetchProductsByCategory(category.id);
+const products = await fetchProductsByCategory(String(category.id));
 
   const sort = searchParams?.sort || "name";
   const page = parseInt(searchParams?.page || "1");

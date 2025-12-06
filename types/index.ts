@@ -251,6 +251,8 @@ export interface ProductCategory extends BaseEntity {
 }
 
 // Product types
+// Update your Product type in types/index.ts
+// types/index.ts
 export interface Product extends BaseEntity {
   name: string;
   slug: string;
@@ -266,12 +268,16 @@ export interface Product extends BaseEntity {
   isFeatured: boolean;
   isNew: boolean;
   isOnSale: boolean;
-  images: string[];
+  images: (string | Image)[];
   features: string[];
   specifications: Record<string, string>;
   tags: string[];
   sku?: string;
+  
+  // ✅ Add these properties
+  status?: string; // String for ProductDetail component
   availability?: "In Stock" | "Low Stock" | "Out of Stock";
+  
   category: ProductCategory;
   brand?: string;
 }
@@ -361,6 +367,8 @@ export interface OfferCardProps {
   title: string;
   subtitle: string;
   className?: string;
+    image: string;                     // ✅ add this line
+
   imageStyle?: React.CSSProperties;
 }
 

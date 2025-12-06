@@ -120,9 +120,9 @@ export default function Home(): ReactElement {
         <Footer />
         {/* </div> */}
       </div>
-      {showLoginModal && (
+      {/* {showLoginModal && (
         <LoginModal onClose={() => setShowLoginModal(false)} onLogin={login} />
-      )}
+      )} */}
     </>
   );
 }
