@@ -27,7 +27,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     setLoading(true);
     try {
-      const user=await loginUser(loginForm.email, loginForm.password);
+      const user = await loginUser(loginForm.email, loginForm.password);
       const token = await user.getIdToken();
 
       // Save token to localStorage
@@ -156,13 +156,19 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 required
               />
             </div>
-
-            <button
-              type="submit"
-              className="w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#196b7a]/90 transition-colors shadow-md"
-            >
-              Login
-            </button>
+            {loading ? (
+              <span className="flex justify-center items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Processing...
+              </span>
+            ) : (
+              <button
+                type="submit"
+                className="w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#196b7a]/90 transition-colors shadow-md"
+              >
+                Login
+              </button>
+            )}
 
             <p className="text-center text-sm text-gray-600 mt-4">
               Don't have an account?{" "}

@@ -20,14 +20,40 @@ import { CartItem } from "@/types";
 import { ReactElement } from "react";
 import NavbarWrapper from "@/components/layout/NavbarWrapper";
 import Image from "next/image";
+import { auth } from "@/lib/firebase/firebaseConfig";
+import {
+  addToWishlist,
+  clearCart,
+  getUserCart,
+  removeFromCart,
+  updateCartQuantity,
+} from "@/lib/firebase/firebaseQueries";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function CartPage(): ReactElement {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [cart, setCart] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   const [removingItem, setRemovingItem] = useState<string | number | null>(
     null
   );
   const [isCheckingOut, setIsCheckingOut] = useState<boolean>(false);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (!firebaseUser) {
+        setLoading(false);
+        return;
+      }
+
+      console.log("User Logged In:", firebaseUser.uid);
+      const data = await getUserCart(firebaseUser.uid);
+      setCart(data);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const savedCart = localStorage.getItem("siyana-cart");
@@ -43,32 +69,39 @@ export default function CartPage(): ReactElement {
     }
   }, [cart, loading]);
 
-  const updateQuantity = (
-    productId: string | number,
-    newQuantity: number
-  ): void => {
-    if (newQuantity < 1) return;
-    setCart(
-      cart.map((item) =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
+  const changeQuantity = async (productId: string, newQty: number) => {
+    if (!user || newQty < 1) return;
+
+    await updateCartQuantity(user.uid, productId, newQty);
+
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === productId ? { ...item, quantity: newQty } : item
       )
     );
   };
 
-  const removeFromCart = async (productId: string | number): Promise<void> => {
-    setRemovingItem(productId);
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    setCart(cart.filter((item) => item.id !== productId));
-    setRemovingItem(null);
+  const handleRemove = async (productId: string) => {
+    if (!user) return;
+
+    await removeFromCart(user.uid, productId);
+    setCart((prev) => prev.filter((item) => item.id !== productId));
   };
 
-  const clearCart = (): void => {
+  const handleClearCart = async () => {
+    if (!user) return;
+
+    await clearCart(user.uid);
     setCart([]);
   };
 
-  const moveToWishlist = (item: CartItem): void => {
-    console.log("Move to wishlist:", item);
-    removeFromCart(item.id);
+  const moveToWishlist = async (item: CartItem) => {
+    if (!user) return;
+    const success = await addToWishlist(user.uid, item);
+    if (success) {
+      await removeFromCart(user.uid, item.id);
+      setCart((prev) => prev.filter((p) => p.id !== item.id));
+    }
   };
 
   const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
@@ -159,7 +192,7 @@ export default function CartPage(): ReactElement {
             </div>
             {cart.length > 0 && (
               <button
-                onClick={clearCart}
+                onClick={handleClearCart}
                 className="text-red-600 hover:text-red-700 font-medium px-4 py-2 rounded-lg hover:bg-red-50 transition-all duration-300"
               >
                 Clear All Items
@@ -273,7 +306,7 @@ export default function CartPage(): ReactElement {
                               <div className="flex items-center border border-gray-300 rounded-lg">
                                 <button
                                   onClick={() =>
-                                    updateQuantity(item.id, item.quantity - 1)
+                                    changeQuantity(item.id, item.quantity - 1)
                                   }
                                   className="p-2 text-gray-600 hover:bg-gray-50 transition-colors rounded-l-lg"
                                   disabled={item.quantity <= 1}
@@ -285,7 +318,7 @@ export default function CartPage(): ReactElement {
                                 </span>
                                 <button
                                   onClick={() =>
-                                    updateQuantity(item.id, item.quantity + 1)
+                                    changeQuantity(item.id, item.quantity + 1)
                                   }
                                   className="p-2 text-gray-600 hover:bg-gray-50 transition-colors rounded-r-lg"
                                 >
@@ -304,7 +337,7 @@ export default function CartPage(): ReactElement {
                                 <Heart className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => removeFromCart(item.id)}
+                                onClick={() => handleRemove(item.id)}
                                 className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50"
                                 title="Remove from Cart"
                               >

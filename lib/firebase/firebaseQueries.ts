@@ -1,5 +1,5 @@
 // firebaseQueries.js
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/firebaseConfig";
 import { Category } from "@/types";
 import { Product } from "@/types";
@@ -92,7 +92,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
       ...doc.data(),
     })) as Category[];
 
-    return data.reverse();  ;
+    return data.reverse();;
   } catch (error: unknown) {
     console.error("❌ Category Fetch Error:", error);
 
@@ -177,7 +177,7 @@ export const fetchGoldRate = async () => {
   try {
     const q = query(
       collection(db, "goldRates"),
-      orderBy("createdAt", "desc"), 
+      orderBy("createdAt", "desc"),
       limit(1)
     );
 
@@ -203,10 +203,10 @@ export const fetchGoldRate = async () => {
 export const signupUser = async (
   name: string,
   email: string,
-  mobile:string,
+  mobile: string,
   password: string
 ): Promise<User> => {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, mobile,password);
+  const userCredential = await createUserWithEmailAndPassword(auth, email, mobile, password);
   const user = userCredential.user;
 
   // Store name in user profile
@@ -222,4 +222,85 @@ export const loginUser = async (
 ): Promise<User> => {
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   return userCredential.user;
+};
+
+export const addToCart = async (uid: string, product: any, quantity: number) => {
+  const cartRef = doc(db, "users", uid, "cart", product.id);
+
+  const cartItemSnap = await getDoc(cartRef);
+
+  if (cartItemSnap.exists()) {
+    // Update quantity
+    const currentQty = cartItemSnap.data().quantity;
+    await updateDoc(cartRef, { quantity: currentQty + quantity });
+  } else {
+    // Add new product
+    await setDoc(cartRef, {
+      ...product,
+      quantity,
+      addedAt: new Date(),
+    });
+  }
+};
+
+
+
+export const getUserCart = async (id) => {
+  console.log('hello ',id)
+  if (!id) return [];
+
+  const cartCollectionRef = collection(db, "users", id, "cart");
+
+  try {
+    const snapshot = await getDocs(cartCollectionRef);
+    const cartItems: any[] = [];
+
+    snapshot.forEach((docItem) => {
+      cartItems.push({ id: docItem.id, ...docItem.data() });
+    });
+
+    // Save count only in browser
+    if (typeof window !== "undefined") {
+      localStorage.setItem("siyana-cart-count", String(cartItems.length));
+    }
+
+    return cartItems;
+  } catch (error) {
+    console.error("Error fetching cart:", error);
+    return [];
+  }
+};
+
+export const removeFromCart = async (uid: string, productId: string | number) => {
+  await deleteDoc(doc(db, "users", uid, "cart", productId + ""));
+};
+
+export const updateCartQuantity = async (
+  uid: string,
+  productId: string | number,
+  newQuantity: number
+) => {
+  if (newQuantity < 1) return;
+  const itemRef = doc(db, "users", uid, "cart", productId + "");
+  await updateDoc(itemRef, { quantity: newQuantity });
+};
+export const clearCart = async (uid: string) => {
+  const snapshot = await getDocs(collection(db, "users", uid, "cart"));
+  const deleteOps = snapshot.docs.map((d) => deleteDoc(d.ref));
+  await Promise.all(deleteOps);
+};
+
+
+export const addToWishlist = async (userId: string, product: any) => {
+  try {
+    const wishlistRef = doc(collection(db, "users", userId, "wishlist"), product.id);
+    await setDoc(wishlistRef, {
+      ...product,
+      addedAt: new Date(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error adding to wishlist:", error);
+    return false;
+  }
 };
