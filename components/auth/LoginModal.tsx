@@ -27,14 +27,19 @@ const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     setLoading(true);
     try {
-      await loginUser(loginForm.email, loginForm.password);
+      const user=await loginUser(loginForm.email, loginForm.password);
+      const token = await user.getIdToken();
+
+      // Save token to localStorage
+      localStorage.setItem("siyana-user-token", token);
       toast.success("Logged in successfully");
+
       onClose();
     } catch (err: any) {
       toast.error(err.message);
-    }finally {
-    setLoading(false);
-  }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
@@ -50,15 +55,15 @@ const AuthModal: React.FC<AuthModalProps> = ({
         signupForm.name,
         signupForm.email,
         signupForm.mobile,
-        signupForm.password,
+        signupForm.password
       );
       toast.success("Account created successfully!");
       setIsLogin(true);
     } catch (err: any) {
       toast.error(err.message);
-    }finally {
-    setLoading(false);
-  }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const switchToSignup = () => {
