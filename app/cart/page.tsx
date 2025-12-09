@@ -138,20 +138,48 @@ export default function CartPage(): ReactElement {
     ).toLocaleString()}\n\nPlease confirm my order.`;
   };
 
-  const handleWhatsAppCheckout = (): void => {
+  const handleWhatsAppCheckout = async (): Promise<void> => {
+    if (!user) {
+      alert("Please log in to checkout");
+      return;
+    }
+
     setIsCheckingOut(true);
 
-    const phoneNumber = "919539794665"; // Your WhatsApp number without +
-    const message = encodeURIComponent(generateOrderMessage());
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+    try {
+      // Call checkout API
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          userEmail: user.email,
+          userName: user.displayName || "Customer",
+        }),
+      });
 
-    // Open WhatsApp in a new tab
-    window.open(whatsappUrl, "_blank");
+      const data = await response.json();
 
-    // Reset loading state after a short delay
-    setTimeout(() => {
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Checkout failed");
+      }
+
+      // Clear local cart state
+      setCart([]);
+
+      // Open WhatsApp with the generated URL
+      window.open(data.whatsappUrl, "_blank");
+
+      // Show success message
+      alert(`Order #${data.orderId} created successfully! Opening WhatsApp...`);
+    } catch (error: any) {
+      console.error("Checkout error:", error);
+      alert(error.message || "Failed to process checkout. Please try again.");
+    } finally {
       setIsCheckingOut(false);
-    }, 2000);
+    }
   };
 
   if (loading) {
