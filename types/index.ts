@@ -350,6 +350,31 @@ export interface AuthModalProps {
   onSignup: (name: string, email: string, password: string, confirmPassword: string) => void;
 }
 
+
+// Order types for WhatsApp checkout
+export interface Order {
+  orderId: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  items: CartItem[];
+  totalAmount: number;
+  status: 'whatsapp_sent';
+  createdAt: any; // Firestore Timestamp
+  updatedAt?: any;
+}
+
+export interface CheckoutRequest {
+  userId: string;
+}
+
+export interface CheckoutResponse {
+  success: boolean;
+  orderId: string;
+  whatsappUrl: string;
+  message: string;
+}
+
 export interface ProductCardProps {
   product: Product;
   onAddToCart: (product: Product) => void;
