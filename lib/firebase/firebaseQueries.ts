@@ -1,5 +1,5 @@
 // firebaseQueries.js
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/firebaseConfig";
 import { Category, ProductCategory } from "@/types";
 import { Product } from "@/types";
@@ -310,7 +310,7 @@ export const fetchGoldRate = async () => {
   try {
     const q = query(
       collection(db, "goldRates"),
-      orderBy("createdAt", "desc"), 
+      orderBy("createdAt", "desc"),
       limit(1)
     );
 
@@ -342,16 +342,170 @@ export const signupUser = async (
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
-  // Store name in user profile
-  await updateProfile(user, { displayName: name });
+    // 2. Update display name
+    await updateProfile(user, { displayName: name });
 
-  return user;
-};
+    // 3. Create user document in Firestore with role 'customer'
+    await setDoc(doc(db, "users", user.uid), {
+      name,
+      email,
+      mobile,
+      role: "customer",
+      createdAt: new Date(),
+    });
+
+    return user; // return firebase auth user
+  } 
 // Login
-export const loginUser = async (
-  email: string,
-  password: string
-): Promise<User> => {
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
+export const loginUser = async (identifier: string, password: string) => {
+  try {
+    if (!identifier || !password) {
+      throw new Error("Email/phone and password are required");
+    }
+
+    let emailToUse = identifier.trim();
+
+    // If identifier is all digits, treat it as mobile
+    if (/^\d+$/.test(emailToUse)) {
+      const usersRef = collection(db, "users");
+      const q = query(
+        usersRef,
+        where("mobile", "==", emailToUse),
+        where("role", "==", "customer"),
+      );
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        throw new Error("User not found with this mobile number");
+      }
+
+      const userDoc = snap.docs[0];
+      const data = userDoc.data() as any;
+
+      if (!data.email) {
+        throw new Error("User does not have an email linked to their account");
+      }
+
+      emailToUse = String(data.email).trim();
+    }
+
+    console.log("Logging in with email:", `"${emailToUse}"`);
+
+    // Sign in with email & password
+    const userCredential = await signInWithEmailAndPassword(auth, emailToUse, password);
+    const user = userCredential.user;
+
+    // Fetch Firestore user document
+    const userDocSnap = await getDoc(doc(db, "users", user.uid));
+    if (!userDocSnap.exists()) throw new Error("User data not found");
+
+    const userData = userDocSnap.data() as any;
+
+    if (userData.role !== "customer") {
+      throw new Error("Access denied. Not a customer.");
+    }
+
+    const token = await user.getIdToken();
+    return { token, user: { uid: user.uid, ...userData } };
+
+  } catch (error: any) {
+    console.error("Login Error:", error);
+
+    // If it's a Firebase auth error, use its code/message
+    if (error?.code?.startsWith("auth/")) {
+      // Customize messages if you want:
+      if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+        throw new Error("Invalid email or password");
+      }
+      if (error.code === "auth/user-not-found") {
+        throw new Error("No user found with these credentials");
+      }
+      if (error.code === "auth/too-many-requests") {
+        throw new Error("Too many attempts. Try again later.");
+      }
+
+      throw new Error(error.message || "Authentication failed");
+    }
+
+    throw new Error(error.message || "Login failed");
+  }
+};
+export const addToCart = async (uid: string, product: any, quantity = 1) => {
+  const cartRef = doc(db, "users", uid, "cart", product.id);
+  const cartSnap = await getDoc(cartRef);
+
+  if (cartSnap.exists()) {
+    // Update quantity if product exists
+    const currentQty = cartSnap.data().quantity || 0;
+    await updateDoc(cartRef, { quantity: currentQty + quantity });
+  } else {
+    // Add new product
+    await setDoc(cartRef, {
+      ...product,
+      quantity,
+      addedAt: new Date(),
+    });
+  }
+};
+
+
+
+export const getUserCart = async (id: string) => {
+  console.log('hello ', id)
+  if (!id) return [];
+
+  const cartCollectionRef = collection(db, "users", id, "cart");
+
+  try {
+    const snapshot = await getDocs(cartCollectionRef);
+    const cartItems: any[] = [];
+
+    snapshot.forEach((docItem) => {
+      cartItems.push({ id: docItem.id, ...docItem.data() });
+    });
+
+    // Save count only in browser
+    if (typeof window !== "undefined") {
+      localStorage.setItem("siyana-cart-count", String(cartItems.length));
+    }
+
+    return cartItems;
+  } catch (error) {
+    console.error("Error fetching cart:", error);
+    return [];
+  }
+};
+
+export const removeFromCart = async (uid: string, productId: string | number) => {
+  await deleteDoc(doc(db, "users", uid, "cart", productId + ""));
+};
+
+export const updateCartQuantity = async (
+  uid: string,
+  productId: string | number,
+  newQuantity: number
+) => {
+  if (newQuantity < 1) return;
+  const itemRef = doc(db, "users", uid, "cart", productId + "");
+  await updateDoc(itemRef, { quantity: newQuantity });
+};
+export const clearCart = async (uid: string) => {
+  const snapshot = await getDocs(collection(db, "users", uid, "cart"));
+  const deleteOps = snapshot.docs.map((d) => deleteDoc(d.ref));
+  await Promise.all(deleteOps);
+};
+
+
+export const addToWishlist = async (userId: string, product: any) => {
+  try {
+    const wishlistRef = doc(collection(db, "users", userId, "wishlist"), product.id);
+    await setDoc(wishlistRef, {
+      ...product,
+      addedAt: new Date(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error adding to wishlist:", error);
+    return false;
+  }
 };
