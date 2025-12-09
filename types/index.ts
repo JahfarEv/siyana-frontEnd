@@ -113,6 +113,7 @@ export interface NavbarProps {
 export interface LoginModalProps {
   onClose: () => void;
   onLogin: (user: User) => void;
+  onSignup?: (user: User) => void;
 }
 
 export interface ProductCardProps {
@@ -135,7 +136,7 @@ export interface OfferCardProps {
   image: string; // fixed
 }
 
-export interface HeroBannerProps {}
+export interface HeroBannerProps { }
 
 export interface FeaturedProductsProps {
   onAddToCart: (product: Product) => void;
@@ -210,3 +211,26 @@ export interface Category {
   updatedAt?: any;
 }
 
+// Order types for WhatsApp checkout
+export interface Order {
+  orderId: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  items: CartItem[];
+  totalAmount: number;
+  status: 'whatsapp_sent';
+  createdAt: any; // Firestore Timestamp
+  updatedAt?: any;
+}
+
+export interface CheckoutRequest {
+  userId: string;
+}
+
+export interface CheckoutResponse {
+  success: boolean;
+  orderId: string;
+  whatsappUrl: string;
+  message: string;
+}

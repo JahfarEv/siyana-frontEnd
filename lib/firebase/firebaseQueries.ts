@@ -341,3 +341,57 @@ export const addToWishlist = async (userId: string, product: any) => {
     return false;
   }
 };
+
+// Create order for WhatsApp checkout
+export const createOrder = async (
+  userId: string,
+  userEmail: string,
+  userName: string,
+  cartItems: any[]
+) => {
+  try {
+    // Generate order ID
+    const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    // Calculate total
+    const totalAmount = cartItems.reduce(
+      (sum, item) => sum + (item.price * item.quantity),
+      0
+    );
+
+    // Create order document
+    const orderData = {
+      orderId,
+      userId,
+      userEmail,
+      userName,
+      items: cartItems,
+      totalAmount,
+      status: 'whatsapp_sent',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Save to Firestore
+    await setDoc(doc(db, "orders", orderId), orderData);
+
+    return { success: true, orderId, totalAmount };
+  } catch (error) {
+    console.error("Error creating order:", error);
+    throw new Error("Failed to create order");
+  }
+};
+
+// Get order by ID
+export const getOrderById = async (orderId: string) => {
+  try {
+    const orderDoc = await getDoc(doc(db, "orders", orderId));
+    if (!orderDoc.exists()) {
+      return null;
+    }
+    return { id: orderDoc.id, ...orderDoc.data() };
+  } catch (error) {
+    console.error("Error fetching order:", error);
+    return null;
+  }
+};

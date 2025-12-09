@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCarousel } from "@/hooks/useCarousel";
+
 import Link from "next/link";
 
 // Type for carousel items
@@ -15,18 +15,12 @@ interface CarouselItem {
   createdAt?: { seconds: number; nanoseconds: number };
 }
 
-const HeroBanner: React.FC = () => {
+interface HeroBannerProps {
+  slides: CarouselItem[];
+}
+
+const HeroBanner: React.FC<HeroBannerProps> = ({ slides }) => {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
-
-  // Correctly type the data returned from the hook
-  const { data, isLoading, isError } = useCarousel() as {
-    data?: CarouselItem[];
-    isLoading: boolean;
-    isError: boolean;
-  };
-
-  // Use a fallback if no data
-  const slides: CarouselItem[] = data?.length ? data : [];
 
   useEffect(() => {
     if (!slides.length) return;
@@ -41,9 +35,7 @@ const HeroBanner: React.FC = () => {
   const prevSlide = (): void =>
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
-  if (isLoading) return <div className="h-96 bg-gray-200 animate-pulse rounded-3xl m-4" />;
-  if (isError) return <div className="h-96 bg-red-200 rounded-3xl m-4">Failed to load slides</div>;
-  if (!slides.length) return null;
+  if (!slides || !slides.length) return null;
 
   return (
     <div className="relative h-96 flex items-center justify-center overflow-hidden rounded-3xl m-4">
