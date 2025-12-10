@@ -64,6 +64,13 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
   const [isInCart, setIsInCart] = useState<boolean>(false);
   const router = useRouter();
 
+  // Check if user is logged in (you can replace this with your actual auth check)
+  const isUserLoggedIn = () => {
+    // This is a placeholder - replace with your actual authentication check
+    return localStorage.getItem("siyana-user-token") !== null;
+  };
+
+ 
   const availabilityStatus = useMemo(() => {
     if (product.availability) {
       if (product.availability === "Out of Stock")
@@ -94,26 +101,58 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
         bg: "bg-red-50",
         border: "border-red-200",
       };
-    }
-    if (
-      product.stock !== undefined &&
-      product.stock !== null &&
-      product.stock < 10
-    ) {
+    if (product.availability === "Low Stock")
       return {
         text: "Low Stock",
         color: "text-amber-600",
         bg: "bg-amber-50",
         border: "border-amber-200",
       };
-    }
     return {
       text: "In Stock",
       color: "text-[#196b7a]",
       bg: "bg-[#196b7a]/10",
       border: "border-[#196b7a]/20",
     };
-  }, [product.inStock, product.stock, product.availability]);
+  }
+
+  if (!product.inStock) {
+    return {
+      text: "Out of Stock",
+      color: "text-red-600",
+      bg: "bg-red-50",
+      border: "border-red-200",
+    };
+  }
+
+  // 🔥 FIX STARTS HERE
+  let stockValue: number | undefined;
+
+  if (typeof product.stock === "number") {
+    stockValue = product.stock;
+  } else if (typeof product.stock === "string") {
+    const parsed = parseInt(product.stock, 10);
+    stockValue = isNaN(parsed) ? undefined : parsed;
+  }
+
+  if (typeof stockValue === "number" && stockValue < 10) {
+    return {
+      text: "Low Stock",
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      border: "border-amber-200",
+    };
+  }
+  // 🔥 FIX ENDS HERE
+
+  return {
+    text: "In Stock",
+    color: "text-[#196b7a]",
+    bg: "bg-[#196b7a]/10",
+    border: "border-[#196b7a]/20",
+  };
+}, [product.inStock, product.stock, product.availability]);
+
 
   const renderStars = (rating: number): ReactElement[] => {
     const stars = [];
@@ -213,9 +252,9 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
 
     checkCart();
   }, [product.id]);
-  const currentPrice = `₹${product.price.toLocaleString()}`;
+  const currentPrice = `${product.price.toLocaleString()}`;
   const originalPrice = product.originalPrice
-    ? `₹${product.originalPrice.toLocaleString()}`
+    ? `${product.originalPrice.toLocaleString()}`
     : null;
   const discountText =
     product.discount > 0 ? `Save ${product.discount}%` : null;

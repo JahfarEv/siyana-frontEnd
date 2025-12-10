@@ -62,6 +62,22 @@ interface CategoryGridProps {
 const CategoryGrid: React.FC<CategoryGridProps> = ({ categories }) => {
   const router = useRouter();
   const [visibleCount, setVisibleCount] = useState(12);
+  // 🔥 Fetch categories using external function
+  useEffect(() => {
+  const loadCategories = async () => {
+    try {
+      const data = await fetchCategories();
+      setCategories(data as unknown as Category[]);
+    } catch (error) {
+      console.error("⚠️ Category fetch failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadCategories();
+}, []);
+  console.log(categories, "fecth");
 
   const handleCategoryClick = (name: string) => {
     console.log(name)

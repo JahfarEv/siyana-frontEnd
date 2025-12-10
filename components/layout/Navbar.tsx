@@ -88,6 +88,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
         {/* Icons Section */}
         <div className="flex items-center space-x-4 text-gray-700">
+            <h1 className="p-2 text-white">Welcome {userName}</h1>
           <Heart
             size={24}
             className="cursor-pointer hover:text-teal-700 text-white"
@@ -109,7 +110,7 @@ const Navbar: React.FC<NavbarProps> = ({
             onClick={user ? onLogout : onLoginClick}
             className="cursor-pointer hover:text-teal-700"
           >
-            <User size={24} className="text-white" />{userName}
+            <User size={24} className="text-white" />
           </button>
         </div>
       </div>

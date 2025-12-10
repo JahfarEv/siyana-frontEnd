@@ -11,6 +11,29 @@ export default async function Home(): Promise<ReactElement> {
   ]);
 
   return (
+    <>
+      {/* <div className="max-w-7xl mx-auto"> */}
+
+      <Navbar
+        cartItemsCount={cartItemsCount}
+        user={user}
+        onLoginClick={() => setShowLoginModal(true)}
+        onLogout={logout}
+      />
+      <div className="overflow-x-hidden">
+        <main className="grow">
+          <HeroBanner />
+          <OfferCards />
+          <CategoryGrid />
+          {/* FeaturedProducts removed as requested */}
+        </main>
+        <Footer />
+        {/* </div> */}
+      </div>
+      {/* {showLoginModal && (
+        <LoginModal onClose={() => setShowLoginModal(false)} onLogin={login} />
+      )} */}
+    </>
     <HomeClient
       carouselData={carouselData}
       categories={categories}
