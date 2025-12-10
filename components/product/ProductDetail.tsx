@@ -24,33 +24,8 @@ import { addToCart, getUserCart } from "@/lib/firebase/firebaseQueries";
 import toast from "react-hot-toast";
 import { auth } from "@/lib/firebase/firebaseConfig";
 
-interface ProductDetailProps {
-  product: {
-    id: string | number;
-    name: string;
-    price: string;
-    originalPrice?: number;
-    discount: number;
-    description: string;
-    rating: number;
-    reviewCount: number;
-    inStock: boolean;
-    stock?: number | string;
-    isOnSale?: boolean;
-    isNew?: boolean;
-    images: (string | { url: string })[];
-    features?: string[];
-    specifications?: { [key: string]: string };
-    tags?: string[];
-    sku?: string;
-    status: string;
-    availability?: "In Stock" | "Low Stock" | "Out of Stock";
-    category: {
-      name: string;
-      slug: string;
-    };
-  };
-}
+import { ProductDetailProps } from "@/types";
+
 
 const ProductDetailPage: React.FC<ProductDetailProps> = ({
   product,
@@ -232,6 +207,16 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
       navigator.clipboard.writeText(window.location.href);
       alert("Product link copied to clipboard!");
     }
+  };
+
+  const handleLogin = (user: any) => {
+    // Login is handled by the AuthModal component
+    setShowLoginModal(false);
+  };
+
+  const handleSignup = (user: any) => {
+    // Signup is handled by the AuthModal component
+    setShowLoginModal(false);
   };
 
   const getImageUrl = (image: any): string => {
@@ -435,7 +420,7 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
 
                   <button
                     onClick={handleBuyNow}
-                    disabled={!product.status || isAddingToCart}
+                    disabled={!product.inStock || isAddingToCart}
                     className="flex-1 flex items-center justify-center gap-3 bg-gray-900 text-white py-4 px-6 rounded-xl font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md"
                   >
                     {isAddingToCart ? "Processing..." : "Buy Now"}
