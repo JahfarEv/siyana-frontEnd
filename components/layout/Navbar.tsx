@@ -1,9 +1,9 @@
-'use client';
-import React, { SyntheticEvent } from 'react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { Search, ShoppingCart, User, Heart } from 'lucide-react';
-import { User as UserType } from '@/types';
+"use client";
+import React, { SyntheticEvent, useEffect, useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Search, ShoppingCart, User, Heart } from "lucide-react";
+import { User as UserType } from "@/types";
 
 interface NavbarProps {
   cartItemsCount?: number;
@@ -16,26 +16,49 @@ const Navbar: React.FC<NavbarProps> = ({
   cartItemsCount = 0,
   user = null,
   onLoginClick,
-  onLogout
+  onLogout,
 }) => {
+  const [cartCount, setCartCount] = useState<number>(0);
+  const[userName,setUserName]=useState<string>('')
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedCount = Number(
+        localStorage.getItem("siyana-cart-count") || 0
+      );
+      const name:any=localStorage.getItem('siyana-user-name')
+      setUserName(name)
+      setCartCount(storedCount);
+    }
+  }, []);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCartCount(Number(localStorage.getItem("siyana-cart-count") || 0));
+    }, 500); // live update
+
+    return () => clearInterval(interval);
+  }, []);
   const router = useRouter();
 
   const handleImageError = (e: SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
-    target.style.display = 'none';
+    target.style.display = "none";
     const fallback = target.nextElementSibling as HTMLElement | null;
-    if (fallback) fallback.style.display = 'block';
+    if (fallback) fallback.style.display = "block";
   };
 
   const handleCartClick = () => {
-    router.push('/cart'); // 👈 navigates to your cart page (e.g., /cart)
+    router.push("/cart"); // 👈 navigates to your cart page (e.g., /cart)
   };
+  console.log(userName,'username')
 
   return (
     <header className="sticky top-0 z-50 bg-[#278899] shadow-md overflow-hidden rounded-3xl m-4 ">
       <div className="relative flex items-center justify-between px-4 py-2 h-20">
         {/* Logo */}
-        <div className="shrink-0 relative h-full flex items-center cursor-pointer" onClick={() => router.push('/')}>
+        <div
+          className="shrink-0 relative h-full flex items-center cursor-pointer"
+          onClick={() => router.push("/")}
+        >
           <Image
             src="/images/web logo.png"
             alt="Siyana Gold & Diamonds"
@@ -47,7 +70,7 @@ const Navbar: React.FC<NavbarProps> = ({
           />
           <div
             className="hidden text-2xl font-bold text-gray-800 bg-yellow-100 px-4 py-2 rounded"
-            style={{ display: 'none' }}
+            style={{ display: "none" }}
           >
             Siyana Gold & Diamonds
           </div>
@@ -65,18 +88,18 @@ const Navbar: React.FC<NavbarProps> = ({
 
         {/* Icons Section */}
         <div className="flex items-center space-x-4 text-gray-700">
-
+            <h1 className="p-2 text-white">Welcome {userName}</h1>
           <Heart
             size={24}
             className="cursor-pointer hover:text-teal-700 text-white"
-            onClick={() => router.push('/wishlist')}
+            onClick={() => router.push("/wishlist")}
           />
 
           <div
             className="relative cursor-pointer hover:text-teal-700"
             onClick={handleCartClick}
           >
-            <ShoppingCart size={24} className='text-white'/>
+            <ShoppingCart size={24} className="text-white" />
             {cartItemsCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                 {cartItemsCount}
@@ -87,7 +110,7 @@ const Navbar: React.FC<NavbarProps> = ({
             onClick={user ? onLogout : onLoginClick}
             className="cursor-pointer hover:text-teal-700"
           >
-            <User size={24} className='text-white'/>
+            <User size={24} className="text-white" />
           </button>
         </div>
       </div>

@@ -1,8 +1,13 @@
-"use client";
+'use client';
+import React, { useState, FormEvent } from 'react';
+import { X } from 'lucide-react';
+import { LoginModalProps, LoginFormData } from '@/types';
 
 import { useState } from "react";
 import { X } from "lucide-react";
 import { AuthModalProps } from "@/types";
+import { loginUser, signupUser } from "@/lib/firebase/firebaseQueries";
+import toast from "react-hot-toast";
 
 const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
@@ -12,86 +17,98 @@ const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
   const [signupForm, setSignupForm] = useState({
     name: "",
     email: "",
+    mobile: "",
     password: "",
     confirmPassword: "",
   });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(loginForm.email, loginForm.password);
-    // Reset form
-    setLoginForm({ email: "", password: "" });
+    setLoading(true);
+    try {
+      const { token, user }= await loginUser(loginForm.email, loginForm.password);
+
+      // Save token to localStorage
+      localStorage.setItem('siyana-user-name',user.name);
+      localStorage.setItem("siyana-user-token", token);
+      toast.success("Logged in successfully");
+
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSignup(
-      signupForm.name,
-      signupForm.email,
-      signupForm.password,
-      signupForm.confirmPassword
-    );
-    // Reset form
-    setSignupForm({ name: "", email: "", password: "", confirmPassword: "" });
+    setLoading(true);
+
+    if (signupForm.password !== signupForm.confirmPassword) {
+      return toast.error("Passwords do not match");
+    }
+
+    try {
+      await signupUser(
+        signupForm.name,
+        signupForm.email,
+        signupForm.mobile,
+        signupForm.password
+      );
+      toast.success("Account created successfully!");
+      setIsLogin(true);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const switchToSignup = () => {
-    setIsLogin(false);
-    setLoginForm({ email: "", password: "" });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   const switchToLogin = () => {
     setIsLogin(true);
-    setSignupForm({ name: "", email: "", password: "", confirmPassword: "" });
+    setSignupForm({
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      mobile: "",
+    });
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 relative">
-        {/* Close Button */}
-        <button
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 relative">
+        <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 transition-colors"
+          aria-label="Close modal"
         >
-          <X className="w-6 h-6" />
+          <X size={24} />
         </button>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 mb-6">
-          <button
-            onClick={() => setIsLogin(true)}
-            className={`flex-1 py-3 font-semibold text-center transition-colors ${
-              isLogin
-                ? "text-[#196b7a] border-b-2 border-[#196b7a]"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Login
-          </button>
-          <button
-            onClick={() => setIsLogin(false)}
-            className={`flex-1 py-3 font-semibold text-center transition-colors ${
-              !isLogin
-                ? "text-[#196b7a] border-b-2 border-[#196b7a]"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Sign Up
-          </button>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">
+            {isLogin ? 'Login' : 'Sign Up'}
+          </h2>
         </div>
 
-        {/* Login Form */}
-        {isLogin ? (
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Welcome Back
-            </h2>
-
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {!isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
@@ -107,7 +124,6 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password
@@ -123,13 +139,19 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 required
               />
             </div>
-
-            <button
-              type="submit"
-              className="w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#196b7a]/90 transition-colors shadow-md"
-            >
-              Login
-            </button>
+            {loading ? (
+              <span className="flex justify-center items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Processing...
+              </span>
+            ) : (
+              <button
+                type="submit"
+                className="w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#196b7a]/90 transition-colors shadow-md"
+              >
+                Login
+              </button>
+            )}
 
             <p className="text-center text-sm text-gray-600 mt-4">
               Don't have an account?{" "}
@@ -155,11 +177,11 @@ const AuthModal: React.FC<AuthModalProps> = ({
               </label>
               <input
                 type="text"
-                value={signupForm.name}
-                onChange={(e) =>
-                  setSignupForm({ ...signupForm, name: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#196b7a] focus:border-transparent transition-all"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                required={!isLogin}
                 placeholder="Enter your full name"
                 required
               />
@@ -180,7 +202,21 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 required
               />
             </div>
-
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mobile Number
+              </label>
+              <input
+                type="tel"
+                value={signupForm.mobile}
+                onChange={(e) =>
+                  setSignupForm({ ...signupForm, mobile: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#196b7a] focus:border-transparent transition-all"
+                placeholder="Enter your mobile number"
+                required
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password
@@ -196,6 +232,37 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 required
               />
             </div>
+          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              required
+              placeholder="Enter your email"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              required
+              placeholder="Enter your password"
+            />
+          </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -218,26 +285,38 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
             <button
               type="submit"
-              className="w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#196b7a]/90 transition-colors shadow-md"
+              disabled={loading}
+              className={`w-full bg-[#196b7a] text-white py-3 px-4 rounded-xl font-semibold shadow-md transition-all
+    ${
+      loading
+        ? "opacity-70 cursor-not-allowed scale-95"
+        : "hover:bg-[#196b7a]/90 active:scale-95"
+    }
+  `}
             >
-              Create Account
+              {loading ? (
+                <span className="flex justify-center items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Processing...
+                </span>
+              ) : isLogin ? (
+                "Login"
+              ) : (
+                "Create Account"
+              )}
             </button>
 
-            <p className="text-center text-sm text-gray-600 mt-4">
-              Already have an account?{" "}
-              <button
-                type="button"
-                onClick={switchToLogin}
-                className="text-[#196b7a] font-semibold hover:underline"
-              >
-                Login here
-              </button>
-            </p>
-          </form>
-        )}
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            className="text-amber-600 hover:text-amber-700 font-medium transition-colors"
+          >
+            {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Login'}
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default AuthModal;
+export default LoginModal;

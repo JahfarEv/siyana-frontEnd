@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -15,22 +15,27 @@ import {
   Sparkles,
   Gem,
   Crown,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { ReactElement } from "react";
 import AuthModal from "../auth/LoginModal"; // Adjust the import path as needed
+import { addToCart, getUserCart } from "@/lib/firebase/firebaseQueries";
+import toast from "react-hot-toast";
+import { auth } from "@/lib/firebase/firebaseConfig";
 
 interface ProductDetailProps {
   product: {
     id: string | number;
     name: string;
-    price: number;
+    price: string;
     originalPrice?: number;
     discount: number;
     description: string;
     rating: number;
     reviewCount: number;
     inStock: boolean;
-    stock?: number | null;
+    stock?: number | string;
     isOnSale?: boolean;
     isNew?: boolean;
     images: (string | { url: string })[];
@@ -38,6 +43,7 @@ interface ProductDetailProps {
     specifications?: { [key: string]: string };
     tags?: string[];
     sku?: string;
+    status: string;
     availability?: "In Stock" | "Low Stock" | "Out of Stock";
     category: {
       name: string;
@@ -55,6 +61,7 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
   const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [isInCart, setIsInCart] = useState<boolean>(false);
   const router = useRouter();
 
   // Check if user is logged in (you can replace this with your actual auth check)
@@ -63,6 +70,7 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
     return localStorage.getItem("siyana-user-token") !== null;
   };
 
+ 
   const availabilityStatus = useMemo(() => {
     if (product.availability) {
       if (product.availability === "Out of Stock")
@@ -93,26 +101,58 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
         bg: "bg-red-50",
         border: "border-red-200",
       };
-    }
-    if (
-      product.stock !== undefined &&
-      product.stock !== null &&
-      product.stock < 10
-    ) {
+    if (product.availability === "Low Stock")
       return {
         text: "Low Stock",
         color: "text-amber-600",
         bg: "bg-amber-50",
         border: "border-amber-200",
       };
-    }
     return {
       text: "In Stock",
       color: "text-[#196b7a]",
       bg: "bg-[#196b7a]/10",
       border: "border-[#196b7a]/20",
     };
-  }, [product.inStock, product.stock, product.availability]);
+  }
+
+  if (!product.inStock) {
+    return {
+      text: "Out of Stock",
+      color: "text-red-600",
+      bg: "bg-red-50",
+      border: "border-red-200",
+    };
+  }
+
+  // 🔥 FIX STARTS HERE
+  let stockValue: number | undefined;
+
+  if (typeof product.stock === "number") {
+    stockValue = product.stock;
+  } else if (typeof product.stock === "string") {
+    const parsed = parseInt(product.stock, 10);
+    stockValue = isNaN(parsed) ? undefined : parsed;
+  }
+
+  if (typeof stockValue === "number" && stockValue < 10) {
+    return {
+      text: "Low Stock",
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      border: "border-amber-200",
+    };
+  }
+  // 🔥 FIX ENDS HERE
+
+  return {
+    text: "In Stock",
+    color: "text-[#196b7a]",
+    bg: "bg-[#196b7a]/10",
+    border: "border-[#196b7a]/20",
+  };
+}, [product.inStock, product.stock, product.availability]);
+
 
   const renderStars = (rating: number): ReactElement[] => {
     const stars = [];
@@ -129,10 +169,9 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
     return stars;
   };
 
-  const handleAddToCart = (): void => {
-    if (!product.inStock) return;
+  const handleAddToCart = async (): Promise<void> => {
+    if (Number(product.stock) < 1) return;
 
-    // Check if user is logged in
     if (!isUserLoggedIn()) {
       setShowLoginModal(true);
       return;
@@ -140,42 +179,27 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
 
     setIsAddingToCart(true);
 
-    // Get existing cart from localStorage
-    const existingCart = localStorage.getItem("siyana-cart");
-    const cart = existingCart ? JSON.parse(existingCart) : [];
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
 
-    // Check if product already exists in cart
-    const existingItemIndex = cart.findIndex(
-      (item: any) => item.id === product.id
-    );
+      await addToCart(user.uid, product, quantity);
 
-    if (existingItemIndex > -1) {
-      // Update quantity if item exists
-      cart[existingItemIndex].quantity += quantity;
-    } else {
-      // Add new item to cart
-      const cartItem = {
-        ...product,
-        quantity: quantity,
-        images: product.images, // Ensure images are included
-      };
-      cart.push(cartItem);
+      setIsInCart(true); // <-- update instantly
+
+      const count = Number(localStorage.getItem("siyana-cart-count") || 0);
+      localStorage.setItem("siyana-cart-count", String(count + quantity));
+
+      toast.success(`${product.name} added to cart!`);
+    } catch (err) {
+      toast.error("Failed to add to cart");
+    } finally {
+      setIsAddingToCart(false);
     }
-
-    // Save to localStorage
-    localStorage.setItem("siyana-cart", JSON.stringify(cart));
-
-    // Reset loading state
-    setIsAddingToCart(false);
-
-    // Show success message (you can replace this with a toast notification)
-    alert(`${product.name} added to cart!`);
-
-    console.log("Added to cart:", product, quantity);
   };
 
   const handleBuyNow = (): void => {
-    if (!product.inStock) return;
+    if (Number(product.stock) < 1) return;
 
     // Check if user is logged in
     if (!isUserLoggedIn()) {
@@ -210,40 +234,27 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
     }
   };
 
-  const handleLogin = (email: string, password: string) => {
-    // Add your login logic here
-    console.log("Login attempt:", email, password);
-
-    // For demo purposes, just store a token and close modal
-    localStorage.setItem("siyana-user-token", "demo-token");
-    setShowLoginModal(false);
-    alert("Login successful!");
-  };
-
-  const handleSignup = (
-    name: string,
-    email: string,
-    password: string,
-    confirmPassword: string
-  ) => {
-    // Add your signup logic here
-    console.log("Signup attempt:", name, email, password, confirmPassword);
-
-    // For demo purposes, just store a token and close modal
-    localStorage.setItem("siyana-user-token", "demo-token");
-    setShowLoginModal(false);
-    alert("Account created successfully!");
-  };
-
   const getImageUrl = (image: any): string => {
     if (typeof image === "string") return image;
     if (typeof image === "object" && image.url) return image.url;
     return "/placeholder-image.jpg";
   };
 
-  const currentPrice = `₹${product.price.toLocaleString()}`;
+  useEffect(() => {
+    const checkCart = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const cartItems = await getUserCart(user.uid);
+      const exists = cartItems.some((item: any) => item.id === product.id);
+      setIsInCart(exists);
+    };
+
+    checkCart();
+  }, [product.id]);
+  const currentPrice = `${product.price.toLocaleString()}`;
   const originalPrice = product.originalPrice
-    ? `₹${product.originalPrice.toLocaleString()}`
+    ? `${product.originalPrice.toLocaleString()}`
     : null;
   const discountText =
     product.discount > 0 ? `Save ${product.discount}%` : null;
@@ -327,13 +338,13 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
                 {/* Rating and Reviews */}
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200">
-                    <div className="flex">{renderStars(product.rating)}</div>
+                    <div className="flex">{renderStars(product?.rating)}</div>
                     <span className="text-sm font-semibold text-gray-700">
-                      {product.rating.toFixed(1)}
+                      {product?.rating}
                     </span>
                   </div>
                   <span className="text-sm text-gray-600">
-                    ({product.reviewCount.toLocaleString()} reviews)
+                    ({product?.reviewCount?.toLocaleString()} reviews)
                   </span>
                 </div>
               </div>
@@ -357,32 +368,102 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
                 )}
               </div>
 
+              {/* Quantity Selector */}
+              <div className="space-y-3">
+                <h3 className="text-base font-semibold text-gray-900">
+                  Quantity
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center border border-gray-300 rounded-lg">
+                    <button
+                      onClick={() =>
+                        setQuantity((prev) => Math.max(1, prev - 1))
+                      }
+                      disabled={quantity <= 1}
+                      className="px-4 py-2 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="px-4 py-2 font-medium min-w-12 text-center bg-white border-x border-gray-300">
+                      {quantity}
+                    </span>
+                    <button
+                      onClick={() => setQuantity((prev) => prev + 1)}
+                      className="px-4 py-2 text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    {product.inStock
+                      ? `${product.stock || "Multiple"} units available`
+                      : "Out of Stock"}
+                  </span>
+                </div>
+              </div>
+
               {/* Action Buttons */}
               <div className="space-y-4">
                 <div className="flex gap-3">
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={!product.inStock || isAddingToCart}
-                    className="flex-1 flex items-center justify-center gap-3 bg-[#196b7a] text-white py-4 px-6 rounded-xl font-semibold hover:bg-[#196b7a]/90 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md"
-                  >
-                    {isAddingToCart ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Adding...
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag className="w-5 h-5" />
-                        Add to Cart
-                      </>
-                    )}
-                  </button>
+                  {isInCart ? (
+                    <button
+                      onClick={() => router.push("/cart")}
+                      className="flex-1 flex items-center justify-center gap-3 bg-green-600 text-white py-4 px-6 rounded-xl font-semibold hover:bg-green-700 transition-all duration-300 shadow-md"
+                    >
+                      <ShoppingBag className="w-5 h-5" />
+                      Go to Cart
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={isAddingToCart}
+                      className="flex-1 flex items-center justify-center gap-3 bg-[#196b7a] text-white py-4 px-6 rounded-xl font-semibold hover:bg-[#196b7a]/90 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md"
+                    >
+                      {isAddingToCart ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag className="w-5 h-5" />
+                          Add to Cart
+                        </>
+                      )}
+                    </button>
+                  )}
+
                   <button
                     onClick={handleBuyNow}
-                    disabled={!product.inStock || isAddingToCart}
+                    disabled={!product.status || isAddingToCart}
                     className="flex-1 flex items-center justify-center gap-3 bg-gray-900 text-white py-4 px-6 rounded-xl font-semibold hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-md"
                   >
                     {isAddingToCart ? "Processing..." : "Buy Now"}
+                  </button>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleWishlist}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium transition-all duration-300 border ${
+                      isWishlisted
+                        ? "bg-red-50 border-red-200 text-red-600"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                    }`}
+                  >
+                    <Heart
+                      className={`w-5 h-5 ${
+                        isWishlisted ? "fill-current" : ""
+                      }`}
+                    />
+                    {isWishlisted ? "Wishlisted" : "Add to Wishlist"}
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    Share
                   </button>
                 </div>
               </div>
@@ -461,14 +542,6 @@ const ProductDetailPage: React.FC<ProductDetailProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onLogin={handleLogin}
-        onSignup={handleSignup}
-      />
     </div>
   );
 };
