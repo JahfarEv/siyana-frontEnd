@@ -358,10 +358,10 @@ export interface CategoryCardProps {
 }
 
 export interface OfferCardProps {
-  title: string;
-  subtitle: string;
+  productName: string;
+  discountPercentage: string;
   className?: string;
-  imageStyle?: React.CSSProperties;
+  image: string;
 }
 
 export interface HeroBannerProps { }
@@ -373,7 +373,7 @@ export interface FeaturedProductsProps {
 
 export interface CategoryProductsProps {
   products: Product[];
-  category: ProductCategory;
+  category: Category;
   sort: string;
   currentPage: number;
 }

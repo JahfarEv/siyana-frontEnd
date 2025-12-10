@@ -244,7 +244,7 @@ const Footer: React.FC = () => {
                     {karat.replace("Gold_", "")}K Gold
                   </div>
                   <div className="text-white font-semibold">
-                    ₹{goldRates[karat] ?? "—"}
+                    ₹{(goldRates as any)[karat]}
                   </div>
                 </div>
               ))
