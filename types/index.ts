@@ -460,5 +460,5 @@ export interface CheckoutResponse {
   success: boolean;
   orderId: string;
   whatsappUrl: string;
-  message: string;
+  message: string;
 }
