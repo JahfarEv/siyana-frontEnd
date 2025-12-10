@@ -251,8 +251,6 @@ export interface ProductCategory extends BaseEntity {
 }
 
 // Product types
-// Update your Product type in types/index.ts
-// types/index.ts
 export interface Product extends BaseEntity {
   name: string;
   slug: string;
@@ -268,16 +266,12 @@ export interface Product extends BaseEntity {
   isFeatured: boolean;
   isNew: boolean;
   isOnSale: boolean;
-  images: (string | Image)[];
+  images: string[];
   features: string[];
   specifications: Record<string, string>;
   tags: string[];
   sku?: string;
-  
-  // ✅ Add these properties
-  status?: string; // String for ProductDetail component
   availability?: "In Stock" | "Low Stock" | "Out of Stock";
-  
   category: ProductCategory;
   brand?: string;
 }
@@ -346,33 +340,8 @@ export interface NavbarProps {
 export interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (email: string, password: string) => void;
-  onSignup: (name: string, email: string, password: string, confirmPassword: string) => void;
-}
-
-
-// Order types for WhatsApp checkout
-export interface Order {
-  orderId: string;
-  userId: string;
-  userEmail: string;
-  userName: string;
-  items: CartItem[];
-  totalAmount: number;
-  status: 'whatsapp_sent';
-  createdAt: any; // Firestore Timestamp
-  updatedAt?: any;
-}
-
-export interface CheckoutRequest {
-  userId: string;
-}
-
-export interface CheckoutResponse {
-  success: boolean;
-  orderId: string;
-  whatsappUrl: string;
-  message: string;
+  onLogin: (user: User) => void;
+  onSignup?: (user: User) => void;
 }
 
 export interface ProductCardProps {
@@ -392,12 +361,10 @@ export interface OfferCardProps {
   title: string;
   subtitle: string;
   className?: string;
-    image: string;                     // ✅ add this line
-
   imageStyle?: React.CSSProperties;
 }
 
-export interface HeroBannerProps {}
+export interface HeroBannerProps { }
 
 export interface FeaturedProductsProps {
   onAddToCart: (product: Product) => void;
@@ -472,3 +439,26 @@ export interface Category {
   updatedAt?: any;
 }
 
+// Order types for WhatsApp checkout
+export interface Order {
+  orderId: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  items: CartItem[];
+  totalAmount: number;
+  status: 'whatsapp_sent';
+  createdAt: any; // Firestore Timestamp
+  updatedAt?: any;
+}
+
+export interface CheckoutRequest {
+  userId: string;
+}
+
+export interface CheckoutResponse {
+  success: boolean;
+  orderId: string;
+  whatsappUrl: string;
+  message: string;
+}

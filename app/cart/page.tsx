@@ -719,7 +719,12 @@ export default function CartPage(): ReactElement {
     return `Hello! I would like to place an order:\n\n${itemsText}\n\nTotal Amount: ₹${grandTotal.toLocaleString()}\n\nPlease confirm my order.`;
   };
 
-  const handleWhatsAppCheckout = (): void => {
+  const handleWhatsAppCheckout = async (): Promise<void> => {
+    if (!user) {
+      alert("Please log in to checkout");
+      return;
+    }
+
     setIsCheckingOut(true);
 
     const phoneNumber = "919539794665";
@@ -729,8 +734,40 @@ export default function CartPage(): ReactElement {
     window.open(whatsappUrl, "_blank");
 
     setTimeout(() => {
+    try {
+      // Call checkout API
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          userEmail: user.email,
+          userName: user.displayName || "Customer",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Checkout failed");
+      }
+
+      // Clear local cart state
+      setCart([]);
+
+      // Open WhatsApp with the generated URL
+      window.open(data.whatsappUrl, "_blank");
+
+      // Show success message
+      alert(`Order #${data.orderId} created successfully! Opening WhatsApp...`);
+    } catch (error: any) {
+      console.error("Checkout error:", error);
+      alert(error.message || "Failed to process checkout. Please try again.");
+    } finally {
       setIsCheckingOut(false);
-    }, 2000);
+    }
   };
 
   if (loading) {

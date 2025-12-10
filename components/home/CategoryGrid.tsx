@@ -54,12 +54,13 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CATEGORIES } from "@/lib/constants/Data";
 import { ReactElement } from "react";
-import { fetchCategories } from "@/lib/firebase/firebaseQueries";
 import { Category } from "@/types";
-const CategoryGrid: React.FC = (): ReactElement => {
+interface CategoryGridProps {
+  categories: Category[];
+}
+
+const CategoryGrid: React.FC<CategoryGridProps> = ({ categories }) => {
   const router = useRouter();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(12);
   // 🔥 Fetch categories using external function
   useEffect(() => {
@@ -77,6 +78,7 @@ const CategoryGrid: React.FC = (): ReactElement => {
   loadCategories();
 }, []);
   console.log(categories, "fecth");
+
   const handleCategoryClick = (name: string) => {
     console.log(name)
     router.push(`/category/${name}`);
