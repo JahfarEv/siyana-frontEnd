@@ -104,7 +104,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
 };
 
 
-export const fetchProductsByCategory = async (categoryId: string) => {
+export const fetchProductsByCategory = async (categoryId: string): Promise<Product[]> => {
   try {
     const productsRef = collection(db, "products");
 
@@ -112,13 +112,13 @@ export const fetchProductsByCategory = async (categoryId: string) => {
     const directQuery = query(productsRef, where("category_id", "==", categoryId));
     const directSnap = await getDocs(directQuery);
     if (!directSnap.empty) {
-      return directSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      return directSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Product[];
     }
 
     // try nested category.id
     const nestedQuery = query(productsRef, where("category.id", "==", categoryId));
     const nestedSnap = await getDocs(nestedQuery);
-    return nestedSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return nestedSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Product[];
   } catch (error) {
     console.error("❌ Product Fetch Error:", error);
     throw new Error("Failed to fetch products");
@@ -126,7 +126,7 @@ export const fetchProductsByCategory = async (categoryId: string) => {
 };
 
 
-export const fetchProductById = async (productId: string) => {
+export const fetchProductById = async (productId: string): Promise<Product | null> => {
   try {
     const productRef = doc(db, "products", productId);
     const productSnap = await getDoc(productRef);
@@ -143,7 +143,7 @@ export const fetchProductById = async (productId: string) => {
       ...data,
       createdAt: data.createdAt?.toDate?.().toISOString() || null,
       updatedAt: data.updatedAt?.toDate?.().toISOString() || null,
-    };
+    } as Product;
   } catch (error) {
     console.error("❌ Product Fetch Error:", error);
     throw new Error("Failed to fetch product");
@@ -282,7 +282,7 @@ export const addToCart = async (uid: string, product: any, quantity = 1) => {
 
 
 
-export const getUserCart = async (id) => {
+export const getUserCart = async (id: string) => {
   console.log('hello ', id)
   if (!id) return [];
 

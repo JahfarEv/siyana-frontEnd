@@ -27,10 +27,10 @@ const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     setLoading(true);
     try {
-      const { token, user }= await loginUser(loginForm.email, loginForm.password);
+      const { token, user } = await loginUser(loginForm.email, loginForm.password);
 
       // Save token to localStorage
-      localStorage.setItem('siyana-user-name',user.name);
+      localStorage.setItem('siyana-user-name', (user as any).name || '');
       localStorage.setItem("siyana-user-token", token);
       toast.success("Logged in successfully");
 

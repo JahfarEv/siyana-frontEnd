@@ -33,8 +33,8 @@ const Footer: React.FC<FooterProps> = () => {
   const { data: goldRates, isLoading, isError } = useGoldRate();
 
   // Convert Firestore timestamp to Date
-  const createdDate = goldRates?.createdAt
-    ? new Date(goldRates.createdAt.seconds * 1000)
+  const createdDate = (goldRates as any)?.createdAt
+    ? new Date((goldRates as any).createdAt.seconds * 1000)
     : null;
 
   return (
@@ -65,7 +65,7 @@ const Footer: React.FC<FooterProps> = () => {
                     {karat.replace("Gold_", "")}K Gold
                   </div>
                   <div className="text-white font-semibold">
-                    ₹{goldRates[karat]}
+                    ₹{(goldRates as any)[karat]}
                   </div>
                 </div>
               ))

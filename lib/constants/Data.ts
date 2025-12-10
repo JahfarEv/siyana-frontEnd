@@ -430,13 +430,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 89999,
     originalPrice: 109999,
     discount: 18,
-    images: [
-      {
-        id: '1',
-        url: '/images/ring-7.jpg',
-        alt: 'Diamond Solitaire Ring'
-      }
-    ],
+    images: ['/images/ring-7.jpg'],
     features: ['24K Gold', 'VS1 Diamond', 'Lifetime Warranty'],
     specifications: {
       'Material': '24K Gold',
@@ -463,13 +457,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 45999,
     originalPrice: 54999,
     discount: 16,
-    images: [
-      {
-        id: '2',
-        url: '/images/ring-7.jpg',
-        alt: 'Gold Wedding Ring'
-      }
-    ],
+    images: ['/images/ring-7.jpg'],
     features: ['22K Gold', 'Traditional Design', 'Comfort Fit'],
     specifications: {
       'Material': '22K Gold',
@@ -496,13 +484,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 125999,
     originalPrice: 149999,
     discount: 16,
-    images: [
-      {
-        id: '3',
-        url: '/images/ring-7.jpg',
-        alt: 'Diamond Eternity Ring'
-      }
-    ],
+    images: ['/images/ring-7.jpg'],
     features: ['24K Gold', 'Multiple Diamonds', 'Eternity Band'],
     specifications: {
       'Material': '24K Gold',
@@ -529,13 +511,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 28999,
     originalPrice: 32999,
     discount: 12,
-    images: [
-      {
-        id: '4',
-        url: '/images/ring-7.jpg',
-        alt: 'Classic Gold Band'
-      }
-    ],
+    images: ['/images/ring-7.jpg'],
     features: ['22K Gold', 'Classic Design', 'Everyday Wear'],
     specifications: {
       'Material': '22K Gold',
@@ -562,13 +538,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 75999,
     originalPrice: 89999,
     discount: 15,
-    images: [
-      {
-        id: '5',
-        url: '/images/ring-7.jpg',
-        alt: 'Vintage Style Ring'
-      }
-    ],
+    images: ['/images/ring-7.jpg'],
     features: ['22K Gold', 'Vintage Design', 'Antique Finish'],
     specifications: {
       'Material': '22K Gold',
@@ -595,13 +565,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 98999,
     originalPrice: 115999,
     discount: 15,
-    images: [
-      {
-        id: '6',
-        url: '/images/ring-7.jpg',
-        alt: 'Modern Diamond Ring'
-      }
-    ],
+    images: ['/images/ring-7.jpg'],
     features: ['24K Gold', 'Modern Design', 'Brilliant Cut'],
     specifications: {
       'Material': '24K Gold',
@@ -630,13 +594,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 45999,
     originalPrice: 54999,
     discount: 16,
-    images: [
-      {
-        id: '7',
-        url: '/images/earring-8.jpg',
-        alt: 'Gold Jhumka Earrings'
-      }
-    ],
+    images: ['/images/earring-8.jpg'],
     features: ['22K Gold', 'Traditional Design', 'Light Weight'],
     specifications: {
       'Material': '22K Gold',
@@ -663,13 +621,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 68999,
     originalPrice: 78999,
     discount: 13,
-    images: [
-      {
-        id: '8',
-        url: '/images/earring-2.jpg',
-        alt: 'Diamond Stud Earrings'
-      }
-    ],
+    images: ['/images/earring-2.jpg'],
     features: ['24K Gold', 'Round Cut', 'Screw Back'],
     specifications: {
       'Material': '24K Gold',
@@ -696,13 +648,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 32999,
     originalPrice: 38999,
     discount: 15,
-    images: [
-      {
-        id: '9',
-        url: '/images/earring-3.jpg',
-        alt: 'Gold Hoop Earrings'
-      }
-    ],
+    images: ['/images/earring-3.jpg'],
     features: ['22K Gold', 'Hoop Design', 'Light Weight'],
     specifications: {
       'Material': '22K Gold',
@@ -729,13 +675,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 56999,
     originalPrice: 64999,
     discount: 12,
-    images: [
-      {
-        id: '10',
-        url: '/images/earring-4.jpg',
-        alt: 'Pearl Drop Earrings'
-      }
-    ],
+    images: ['/images/earring-4.jpg'],
     features: ['22K Gold', 'Freshwater Pearls', 'Drop Design'],
     specifications: {
       'Material': '22K Gold',
@@ -762,13 +702,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 78999,
     originalPrice: 89999,
     discount: 12,
-    images: [
-      {
-        id: '11',
-        url: '/images/earring-5.jpg',
-        alt: 'Chandelier Earrings'
-      }
-    ],
+    images: ['/images/earring-5.jpg'],
     features: ['24K Gold', 'Multiple Diamonds', 'Statement Piece'],
     specifications: {
       'Material': '24K Gold',
@@ -795,13 +729,7 @@ export const ALL_PRODUCTS: Product[] = [
     price: 18999,
     originalPrice: 21999,
     discount: 14,
-    images: [
-      {
-        id: '12',
-        url: '/images/earring-6.jpg',
-        alt: 'Simple Gold Studs'
-      }
-    ],
+    images: ['/images/earring-6.jpg'],
     features: ['22K Gold', 'Simple Design', 'Everyday Wear'],
     specifications: {
       'Material': '22K Gold',
@@ -826,20 +754,20 @@ export const FEATURED_PRODUCTS = ALL_PRODUCTS.filter(product => product.isFeatur
 
 export const OFFERS: OfferCardProps[] = [
   {
-    title: '25% Flat Offer',
-    subtitle: 'Glowing Gold Rings',
+    discountPercentage: '25%',
+    productName: 'Glowing Gold Rings',
     className: 'bg-blue-900',
     image: '/images/ring-7.jpg'
   },
   {
-    title: '10% Flat Offer',
-    subtitle: 'Glowing Gold Earrings',
+    discountPercentage: '10%',
+    productName: 'Glowing Gold Earrings',
     className: 'bg-gray-800',
     image: '/images/earring-8.jpg'
   },
   {
-    title: '15% Flat Offer',
-    subtitle: 'Glowing Gold Necklace',
+    discountPercentage: '15%',
+    productName: 'Glowing Gold Necklace',
     className: 'bg-green-800',
     image: '/images/pendant-7.jpeg'
   },
